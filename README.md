@@ -154,6 +154,53 @@ payment_intent.confirm(payment_method_id: payment_method.id)
 methods = customer.payment_methods
 ```
 
+### Batch Transfers
+
+```ruby
+# Create a batch of transfers for bulk payouts
+batch = Airwallex::BatchTransfer.create(
+  request_id: "batch_#{Time.now.to_i}",
+  source_currency: 'USD',
+  transfers: [
+    { beneficiary_id: 'ben_001', amount: 100.00, reason: 'Seller payout' },
+    { beneficiary_id: 'ben_002', amount: 250.00, reason: 'Affiliate payment' },
+    { beneficiary_id: 'ben_003', amount: 500.00, reason: 'Vendor payment' }
+  ]
+)
+
+# Check batch status
+batch = Airwallex::BatchTransfer.retrieve(batch.id)
+puts "Completed: #{batch.success_count}/#{batch.total_count}"
+
+# Check individual transfer statuses
+batch.transfers.each do |transfer|
+  puts "#{transfer.id}: #{transfer.status}"
+end
+```
+
+### Managing Disputes
+
+```ruby
+# List all open disputes
+disputes = Airwallex::Dispute.list(status: 'OPEN')
+
+# Get specific dispute
+dispute = Airwallex::Dispute.retrieve('dis_123')
+puts "Dispute amount: #{dispute.amount} #{dispute.currency}"
+puts "Reason: #{dispute.reason}"
+puts "Evidence due: #{dispute.evidence_due_by}"
+
+# Submit evidence to challenge
+dispute.submit_evidence(
+  customer_communication: 'Email showing delivery confirmation',
+  shipping_tracking_number: '1Z999AA10123456784',
+  shipping_documentation: 'Proof of delivery with signature'
+)
+
+# Or accept dispute without challenging
+dispute.accept
+```
+
 ## Usage
 
 ### Authentication
@@ -319,23 +366,24 @@ end
 
 ### Currently Implemented Resources
 
-- **Payment Acceptance**: 
+- **Payment Acceptance**:
   - PaymentIntent (create, retrieve, list, update, confirm, cancel, capture)
   - Refund (create, retrieve, list)
   - PaymentMethod (create, retrieve, list, update, delete, detach)
   - Customer (create, retrieve, list, update, delete)
-- **Payouts**: 
+  - Dispute (retrieve, list, accept, submit_evidence)
+- **Payouts**:
   - Transfer (create, retrieve, list, cancel)
   - Beneficiary (create, retrieve, list, delete)
+  - BatchTransfer (create, retrieve, list)
 - **Webhooks**: Event handling, HMAC-SHA256 signature verification
 
 ### Coming in Future Versions
 
-- Disputes and chargebacks
 - Foreign exchange (rates, quotes, conversions)
 - Global accounts
 - Card issuing
-- Batch transfers
+- Subscriptions and billing
 
 ## Environment Support
 

@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+### Added
+- BatchTransfer resource (create, retrieve, list) for bulk payout operations
+- Dispute resource (retrieve, list, accept, submit_evidence) for chargeback management
+- 25 new tests (240 total) covering batch transfers and disputes
+
 ## [0.2.0] - 2025-11-25
 
 ### Added
