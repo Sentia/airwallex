@@ -20,6 +20,11 @@ RSpec.configure do |config|
   # Reset Airwallex configuration before each test
   config.before do
     Airwallex.reset!
+    Airwallex.configure do |c|
+      c.api_key = "test_api_key"
+      c.client_id = "test_client_id"
+      c.environment = :sandbox
+    end
   end
 
   # Clean up after each test

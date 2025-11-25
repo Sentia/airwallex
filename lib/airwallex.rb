@@ -9,6 +9,22 @@ require_relative "airwallex/webhook"
 require_relative "airwallex/middleware/idempotency"
 require_relative "airwallex/middleware/auth_refresh"
 
+# API Operations
+require_relative "airwallex/api_operations/create"
+require_relative "airwallex/api_operations/retrieve"
+require_relative "airwallex/api_operations/list"
+require_relative "airwallex/api_operations/update"
+require_relative "airwallex/api_operations/delete"
+
+# Core classes
+require_relative "airwallex/list_object"
+require_relative "airwallex/api_resource"
+
+# Resources
+require_relative "airwallex/resources/payment_intent"
+require_relative "airwallex/resources/transfer"
+require_relative "airwallex/resources/beneficiary"
+
 module Airwallex
   class << self
     attr_writer :configuration
