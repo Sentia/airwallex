@@ -201,6 +201,55 @@ dispute.submit_evidence(
 dispute.accept
 ```
 
+### Foreign Exchange & Multi-Currency
+
+```ruby
+# Get real-time exchange rate
+rate = Airwallex::Rate.retrieve(
+  buy_currency: 'EUR',
+  sell_currency: 'USD'
+)
+puts "Current rate: #{rate.client_rate}"
+
+# Lock in a rate with a quote (valid for 24 hours)
+quote = Airwallex::Quote.create(
+  buy_currency: 'EUR',
+  sell_currency: 'USD',
+  sell_amount: 10000.00,
+  validity: 'HR_24'
+)
+
+puts "Locked rate: #{quote.client_rate}"
+puts "Expires in: #{quote.seconds_until_expiration} seconds"
+puts "Is expired? #{quote.expired?}"
+
+# Execute conversion using locked quote
+conversion = Airwallex::Conversion.create(
+  quote_id: quote.id,
+  reason: 'Multi-currency settlement'
+)
+
+# Or convert at current market rate
+conversion = Airwallex::Conversion.create(
+  buy_currency: 'EUR',
+  sell_currency: 'USD',
+  sell_amount: 5000.00,
+  reason: 'Currency exchange'
+)
+
+# Check account balances
+balances = Airwallex::Balance.list
+balances.each do |balance|
+  next if balance.available_amount <= 0
+  puts "#{balance.currency}: #{balance.available_amount} available"
+end
+
+# Get specific currency balance
+usd_balance = Airwallex::Balance.retrieve('USD')
+puts "USD Available: #{usd_balance.available_amount}"
+puts "USD Total: #{usd_balance.total_amount}"
+```
+
 ## Usage
 
 ### Authentication
@@ -376,14 +425,19 @@ end
   - Transfer (create, retrieve, list, cancel)
   - Beneficiary (create, retrieve, list, delete)
   - BatchTransfer (create, retrieve, list)
+- **Foreign Exchange & Multi-Currency**:
+  - Rate (retrieve, list) - Real-time exchange rate queries
+  - Quote (create, retrieve) - Lock exchange rates with expiration tracking
+  - Conversion (create, retrieve, list) - Execute currency conversions
+  - Balance (list, retrieve) - Query account balances across currencies
 - **Webhooks**: Event handling, HMAC-SHA256 signature verification
 
 ### Coming in Future Versions
 
-- Foreign exchange (rates, quotes, conversions)
 - Global accounts
 - Card issuing
 - Subscriptions and billing
+- Virtual account numbers
 
 ## Environment Support
 

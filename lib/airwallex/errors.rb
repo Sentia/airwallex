@@ -59,6 +59,7 @@ module Airwallex
   class RateLimitError < Error; end
   class APIError < Error; end
   class InsufficientFundsError < Error; end
+  class QuoteExpiredError < BadRequestError; end
   class SCARequiredError < PermissionError; end
   class SignatureVerificationError < Error; end
 end

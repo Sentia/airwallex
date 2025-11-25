@@ -5,6 +5,7 @@ AllCops:
     - 'bin/**/*'
     - 'spec/**/*'
     - 'vendor/**/*'
+    - 'local_tests/**/*'
 
 Style/StringLiterals:
   EnforcedStyle: double_quotes

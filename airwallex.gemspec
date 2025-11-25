@@ -10,9 +10,9 @@ Gem::Specification.new do |spec|
 
   spec.summary = "Production-grade Ruby client for the Airwallex API"
   spec.description = "A comprehensive Ruby gem for integrating with Airwallex's global payment infrastructure, " \
-                     "including payment acceptance, payouts, foreign exchange, card issuing, and treasury. " \
-                     "Features automatic authentication management, idempotency guarantees, webhook verification, " \
-                     "and unified pagination."
+                     "including payment acceptance, payouts, foreign exchange (FX rates, quotes, conversions), " \
+                     "and multi-currency balance management. Features automatic authentication, idempotency " \
+                     "guarantees, webhook verification, and unified pagination across all resources."
   spec.homepage = "https://www.sentia.com.au"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.1.0"
@@ -31,7 +31,7 @@ Gem::Specification.new do |spec|
   spec.files = IO.popen(%w[git ls-files -z], chdir: __dir__, err: IO::NULL) do |ls|
     ls.readlines("\x0", chomp: true).reject do |f|
       (f == gemspec) ||
-        f.start_with?(*%w[bin/ Gemfile .gitignore .rspec spec/ .github/ .rubocop.yml])
+        f.start_with?(*%w[bin/ Gemfile .gitignore .rspec spec/ .github/ .rubocop.yml local_tests/ docs/])
     end
   end
   spec.bindir = "exe"

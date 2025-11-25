@@ -1,5 +1,26 @@
 ## [Unreleased]
 
+## [0.3.0] - 2025-11-25
+
+### Added
+- Foreign Exchange resources:
+  - Rate resource (retrieve, list) for real-time exchange rate queries
+  - Quote resource (create, retrieve) for locking exchange rates with expiration helpers
+  - Conversion resource (create, retrieve, list) for executing currency conversions
+  - Balance resource (list, retrieve) for querying account balances across currencies
+- Enhanced List operation to handle both array responses and paginated responses
+- 38 new tests (278 total) covering FX and balance operations
+- Comprehensive manual test suite for regression testing
+
+### Changed
+- Refactored List operation for better code quality (reduced complexity from 12 to 7)
+- Balance.retrieve now performs client-side filtering for currency lookup
+
+### Fixed
+- List operation now correctly handles Balance API's direct array response format
+
+## [0.2.1] - 2025-11-25
+
 ### Added
 - BatchTransfer resource (create, retrieve, list) for bulk payout operations
 - Dispute resource (retrieve, list, accept, submit_evidence) for chargeback management

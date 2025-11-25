@@ -29,6 +29,10 @@ require_relative "airwallex/resources/payment_method"
 require_relative "airwallex/resources/customer"
 require_relative "airwallex/resources/batch_transfer"
 require_relative "airwallex/resources/dispute"
+require_relative "airwallex/resources/rate"
+require_relative "airwallex/resources/quote"
+require_relative "airwallex/resources/conversion"
+require_relative "airwallex/resources/balance"
 
 module Airwallex
   class << self
