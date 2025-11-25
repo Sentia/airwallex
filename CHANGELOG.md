@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+## [0.2.0] - 2025-11-25
+
+### Added
+- Refund resource (create, retrieve, list)
+- PaymentMethod resource (create, retrieve, list, update, delete, detach)
+- Customer resource (create, retrieve, list, update, delete)
+- Customer#payment_methods convenience method
+- 28 new tests (215 total)
+
 ## [0.1.0] - 2025-11-25
 
 ### Added

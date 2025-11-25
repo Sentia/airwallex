@@ -102,6 +102,58 @@ transfer = Airwallex::Transfer.create(
 )
 ```
 
+### Processing Refunds
+
+```ruby
+# Create a full refund
+refund = Airwallex::Refund.create(
+  payment_intent_id: payment_intent.id,
+  amount: 100.00,
+  reason: 'requested_by_customer'
+)
+
+# Create a partial refund
+partial_refund = Airwallex::Refund.create(
+  payment_intent_id: payment_intent.id,
+  amount: 50.00
+)
+
+# List all refunds for a payment
+refunds = Airwallex::Refund.list(payment_intent_id: payment_intent.id)
+```
+
+### Managing Payment Methods
+
+```ruby
+# Create a customer
+customer = Airwallex::Customer.create(
+  email: 'customer@example.com',
+  first_name: 'John',
+  last_name: 'Doe'
+)
+
+# Save a payment method
+payment_method = Airwallex::PaymentMethod.create(
+  type: 'card',
+  card: {
+    number: '4242424242424242',
+    expiry_month: '12',
+    expiry_year: '2025',
+    cvc: '123'
+  },
+  billing: {
+    first_name: 'John',
+    email: 'customer@example.com'
+  }
+)
+
+# Use saved payment method
+payment_intent.confirm(payment_method_id: payment_method.id)
+
+# List customer's payment methods
+methods = customer.payment_methods
+```
+
 ## Usage
 
 ### Authentication
@@ -263,22 +315,27 @@ Airwallex.configure do |config|
 end
 ```
 
-## API Coverage (v0.1.0)
+## API Coverage
 
 ### Currently Implemented Resources
 
-- **Payment Acceptance**: PaymentIntent (create, retrieve, list, update, confirm, cancel, capture)
-- **Payouts**: Transfer (create, retrieve, list, cancel), Beneficiary (create, retrieve, list, delete)
+- **Payment Acceptance**: 
+  - PaymentIntent (create, retrieve, list, update, confirm, cancel, capture)
+  - Refund (create, retrieve, list)
+  - PaymentMethod (create, retrieve, list, update, delete, detach)
+  - Customer (create, retrieve, list, update, delete)
+- **Payouts**: 
+  - Transfer (create, retrieve, list, cancel)
+  - Beneficiary (create, retrieve, list, delete)
 - **Webhooks**: Event handling, HMAC-SHA256 signature verification
 
 ### Coming in Future Versions
 
-- Refunds and disputes
+- Disputes and chargebacks
 - Foreign exchange (rates, quotes, conversions)
-- Payment methods management
 - Global accounts
 - Card issuing
-- Additional payout methods
+- Batch transfers
 
 ## Environment Support
 

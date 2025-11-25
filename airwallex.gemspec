@@ -13,7 +13,7 @@ Gem::Specification.new do |spec|
                      "including payment acceptance, payouts, foreign exchange, card issuing, and treasury. " \
                      "Features automatic authentication management, idempotency guarantees, webhook verification, " \
                      "and unified pagination."
-  spec.homepage = "https://github.com/Sentia/airwallex"
+  spec.homepage = "https://www.sentia.com.au"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.1.0"
 
