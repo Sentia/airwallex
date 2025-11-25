@@ -29,6 +29,7 @@ module Airwallex
 
     def self.parse_body(body)
       return {} if body.nil? || body.empty?
+      return body if body.is_a?(Hash)
 
       JSON.parse(body)
     rescue JSON::ParserError

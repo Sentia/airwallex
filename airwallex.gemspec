@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
 
   spec.summary = "Production-grade Ruby client for the Airwallex API"
   spec.description = "A comprehensive Ruby gem for integrating with Airwallex's global payment infrastructure, " \
-                     "including payment acceptance, payouts, foreign exchange, card issuing, and treasury management. " \
+                     "including payment acceptance, payouts, foreign exchange, card issuing, and treasury. " \
                      "Features automatic authentication management, idempotency guarantees, webhook verification, " \
                      "and unified pagination."
   spec.homepage = "https://github.com/Sentia/airwallex"
@@ -23,6 +23,7 @@ Gem::Specification.new do |spec|
   spec.metadata["changelog_uri"] = "https://github.com/Sentia/airwallex/blob/main/CHANGELOG.md"
   spec.metadata["documentation_uri"] = "https://rubydoc.info/gems/airwallex"
   spec.metadata["bug_tracker_uri"] = "https://github.com/Sentia/airwallex/issues"
+  spec.metadata["rubygems_mfa_required"] = "true"
 
   # Specify which files should be added to the gem when it is released.
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
@@ -41,11 +42,4 @@ Gem::Specification.new do |spec|
   spec.add_dependency "faraday", "~> 2.0"
   spec.add_dependency "faraday-multipart", "~> 1.0"
   spec.add_dependency "faraday-retry", "~> 2.0"
-
-  # Development dependencies
-  spec.add_development_dependency "rspec", "~> 3.12"
-  spec.add_development_dependency "rubocop", "~> 1.50"
-  spec.add_development_dependency "webmock", "~> 3.18"
-  spec.add_development_dependency "vcr", "~> 6.1"
-  spec.add_development_dependency "rake", "~> 13.0"
 end

@@ -5,8 +5,8 @@ module Airwallex
     attr_accessor :api_key, :client_id, :api_version, :logger, :log_level
     attr_reader :environment
 
-    SANDBOX_API_URL = "https://api-demo.airwallex.com/api/v1"
-    PRODUCTION_API_URL = "https://api.airwallex.com/api/v1"
+    SANDBOX_API_URL = "https://api-demo.airwallex.com"
+    PRODUCTION_API_URL = "https://api.airwallex.com"
     SANDBOX_FILES_URL = "https://files-demo.airwallex.com"
     PRODUCTION_FILES_URL = "https://files.airwallex.com"
 

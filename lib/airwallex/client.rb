@@ -55,7 +55,7 @@ module Airwallex
 
     def authenticate!
       @token_mutex.synchronize do
-        response = connection.post("/authentication/login") do |req|
+        response = connection.post("/api/v1/authentication/login") do |req|
           req.headers["x-client-id"] = config.client_id
           req.headers["x-api-key"] = config.api_key
           req.headers.delete("Authorization")

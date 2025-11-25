@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 require "airwallex"
+require "webmock/rspec"
+
+# Configure WebMock to block all real HTTP requests
+WebMock.disable_net_connect!(allow_localhost: false)
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
@@ -11,5 +15,15 @@ RSpec.configure do |config|
 
   config.expect_with :rspec do |c|
     c.syntax = :expect
+  end
+
+  # Reset Airwallex configuration before each test
+  config.before do
+    Airwallex.reset!
+  end
+
+  # Clean up after each test
+  config.after do
+    Airwallex.reset!
   end
 end
