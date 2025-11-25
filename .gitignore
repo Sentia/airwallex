@@ -11,3 +11,7 @@
 .rspec_status
 
 .github/copilot-instructions.md
+.env.development
+.env.test
+/local_tests/
+*.gem
