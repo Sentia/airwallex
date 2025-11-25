@@ -1,23 +1,22 @@
 # Airwallex Ruby Gem
 
-A production-grade Ruby client library for the [Airwallex API](https://www.airwallex.com/docs/api), providing comprehensive access to global payment acceptance, payouts, foreign exchange, card issuing, and treasury management capabilities.
+A Ruby client library for the [Airwallex API](https://www.airwallex.com/docs/api), providing access to payment acceptance and payout capabilities.
 
 ## Overview
 
-This gem implements a robust, type-safe interface to Airwallex's financial infrastructure, designed for Ruby 3.1+ applications. It handles the complexities of distributed financial systems including authentication lifecycle management, idempotency guarantees, webhook verification, and multi-environment support.
+This gem provides a Ruby interface to Airwallex's payment infrastructure, designed for Ruby 3.1+ applications. It includes core functionality for authentication management, idempotency guarantees, webhook verification, and multi-environment support.
 
-**Key Features:**
+**Current Features (v0.1.0):**
 
-- **Multi-layered Authentication**: Supports Bearer tokens, OAuth flows, and SCA (Strong Customer Authentication)
-- **Payment Acceptance**: Cards, digital wallets (Apple Pay, Google Pay), and 100+ local payment methods
-- **Global Payouts**: Local and SWIFT transfers with dynamic schema validation for 50+ countries
-- **Foreign Exchange**: Real-time rates, locked quotes, and automatic conversion
-- **Card Issuing**: Virtual and physical card creation with real-time authorization controls
-- **Global Accounts**: Multi-currency virtual IBANs for local collections
+- **Authentication**: Bearer token authentication with automatic refresh
+- **Payment Acceptance**: Payment intent creation, confirmation, and management
+- **Payouts**: Transfer creation and beneficiary management
 - **Idempotency**: Automatic request deduplication for safe retries
-- **Auto-pagination**: Unified interface over cursor-based and offset-based pagination
+- **Pagination**: Unified interface over cursor-based and offset-based pagination
 - **Webhook Security**: HMAC-SHA256 signature verification with replay protection
-- **Sandbox Support**: Full testing environment with magic values for edge cases
+- **Sandbox Support**: Full testing environment for development
+
+**Note:** This is an initial MVP release. Additional resources (FX, cards, refunds, etc.) will be added in future versions.
 
 ## Installation
 
@@ -103,61 +102,21 @@ transfer = Airwallex::Transfer.create(
 )
 ```
 
-### Foreign Exchange
-
-```ruby
-# Get current rate
-rate = Airwallex::FX.rate(
-  buy_currency: 'EUR',
-  sell_currency: 'USD'
-)
-
-# Lock a quote
-quote = Airwallex::FX::Quote.create(
-  buy_currency: 'EUR',
-  sell_currency: 'USD',
-  sell_amount: 10000.00
-)
-
-# Execute conversion with locked rate
-conversion = Airwallex::FX::Conversion.create(
-  quote_id: quote.id
-)
-```
-
 ## Usage
 
 ### Authentication
 
-The gem supports multiple authentication strategies:
+The gem uses Bearer token authentication with automatic token refresh:
 
-#### Direct Merchant (Bearer Token)
 ```ruby
 Airwallex.configure do |config|
   config.api_key = 'your_api_key'
   config.client_id = 'your_client_id'
+  config.environment = :sandbox # or :production
 end
 ```
 
-#### Platform/Connected Accounts (OAuth)
-```ruby
-client = Airwallex::Client.new(
-  access_token: 'oauth_access_token',
-  refresh_token: 'oauth_refresh_token'
-)
-
-# Act on behalf of connected account
-client.headers['x-on-behalf-of'] = 'acct_connected_123'
-```
-
-#### Scoped API Keys
-```ruby
-# Use scoped keys for least-privilege access
-Airwallex.configure do |config|
-  config.api_key = 'scoped_key_with_limited_permissions'
-  config.client_id = 'your_client_id'
-end
-```
+Tokens are automatically refreshed when they expire, and the gem handles thread-safe token management.
 
 ### Idempotency
 
@@ -259,15 +218,20 @@ end
 
 ```
 lib/airwallex/
-├── api_operations/     # CRUD operation mixins
-├── resources/          # Domain models (Payment, Transfer, etc.)
-├── errors.rb           # Exception hierarchy
-├── client.rb           # HTTP client and configuration
-├── webhook.rb          # Signature verification
-├── util.rb             # Pagination, time formatting
-└── middleware/         # Faraday middleware
-    ├── auth_refresh.rb # Token lifecycle management
-    └── idempotency.rb  # Automatic request_id injection
+├── api_operations/        # CRUD operation mixins (Create, Retrieve, List, Update, Delete)
+├── resources/             # Implemented resources
+│   ├── payment_intent.rb  # Payment acceptance
+│   ├── transfer.rb        # Payouts
+│   └── beneficiary.rb     # Payout beneficiaries
+├── api_resource.rb        # Base resource class with dynamic attributes
+├── list_object.rb         # Pagination wrapper
+├── errors.rb              # Exception hierarchy
+├── client.rb              # HTTP client with authentication
+├── configuration.rb       # Environment and credentials
+├── webhook.rb             # Signature verification
+├── util.rb                # Helper methods
+└── middleware/            # Faraday middleware
+    └── idempotency.rb     # Automatic request_id injection
 ```
 
 ## Development
@@ -299,35 +263,36 @@ Airwallex.configure do |config|
 end
 ```
 
-## API Coverage
+## API Coverage (v0.1.0)
 
-### Supported Resources
+### Currently Implemented Resources
 
-- **Payment Acceptance**: PaymentIntents, PaymentMethods, Refunds
-- **Payouts**: Transfers, Beneficiaries, Batch Transfers
-- **Foreign Exchange**: Rates, Quotes, Conversions
-- **Global Accounts**: Account creation, transactions, multi-currency
-- **Card Issuing**: Card creation, authorization, spend controls
-- **Connected Accounts**: Account management, KYC/KYB flows
-- **Webhooks**: Event handling, signature verification
+- **Payment Acceptance**: PaymentIntent (create, retrieve, list, update, confirm, cancel, capture)
+- **Payouts**: Transfer (create, retrieve, list, cancel), Beneficiary (create, retrieve, list, delete)
+- **Webhooks**: Event handling, HMAC-SHA256 signature verification
+
+### Coming in Future Versions
+
+- Refunds and disputes
+- Foreign exchange (rates, quotes, conversions)
+- Payment methods management
+- Global accounts
+- Card issuing
+- Additional payout methods
 
 ## Environment Support
 
 ### Sandbox
 
-Full testing environment with simulated banking networks:
+Testing environment for development:
 
 ```ruby
 Airwallex.configure do |config|
   config.environment = :sandbox
+  config.api_key = ENV['AIRWALLEX_SANDBOX_API_KEY']
+  config.client_id = ENV['AIRWALLEX_SANDBOX_CLIENT_ID']
 end
 ```
-
-**Magic Values for Testing:**
-
-- Amount `$88.88` triggers 3D Secure challenges
-- Specific card numbers simulate various decline scenarios
-- Simulation endpoints force state transitions
 
 ### Production
 
@@ -336,16 +301,24 @@ Live environment for real financial transactions:
 ```ruby
 Airwallex.configure do |config|
   config.environment = :production
-  # Requires separate production credentials
+  config.api_key = ENV['AIRWALLEX_API_KEY']
+  config.client_id = ENV['AIRWALLEX_CLIENT_ID']
 end
 ```
 
 ## Rate Limits
 
-The gem automatically handles rate limiting with exponential backoff:
+The gem respects Airwallex API rate limits. If you encounter `Airwallex::RateLimitError`, implement retry logic with exponential backoff:
 
-- **Production**: 100 req/sec global, 20 req/sec per endpoint, 50 concurrent
-- **Sandbox**: 20 req/sec global, 5 req/sec per endpoint, 10 concurrent
+```ruby
+begin
+  transfer = Airwallex::Transfer.create(params)
+rescue Airwallex::RateLimitError => e
+  sleep(2 ** retry_count)
+  retry_count += 1
+  retry if retry_count < 3
+end
+```
 
 ## Contributing
 
@@ -377,8 +350,7 @@ If you discover a security vulnerability, please email security@sentia.com inste
 ## Documentation
 
 - [Airwallex API Documentation](https://www.airwallex.com/docs/api)
-- [Gem Documentation](https://rubydoc.info/gems/airwallex)
-- [Integration Guides](./docs/internal/)
+- [API Reference](https://www.airwallex.com/docs/api#overview)
 
 ## Requirements
 
