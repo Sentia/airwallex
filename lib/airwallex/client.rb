@@ -7,6 +7,8 @@ require "json"
 
 module Airwallex
   class Client
+    LOGIN_PATH = "/api/v1/authentication/login"
+
     attr_reader :config, :access_token, :token_expires_at
 
     def initialize(config = Airwallex.configuration)
@@ -19,11 +21,7 @@ module Airwallex
 
     def connection
       @connection ||= Faraday.new(url: config.api_url) do |conn|
-        conn.request :json
-        conn.request :multipart
-        conn.request :retry, retry_options
-        conn.response :json, content_type: /\bjson$/
-        conn.response :logger, config.logger, { headers: true, bodies: true } if config.logger
+        configure_middleware(conn)
 
         conn.headers["Content-Type"] = "application/json"
         conn.headers["User-Agent"] = user_agent
@@ -55,7 +53,7 @@ module Airwallex
 
     def authenticate!
       @token_mutex.synchronize do
-        response = connection.post("/api/v1/authentication/login") do |req|
+        response = connection.post(LOGIN_PATH) do |req|
           req.headers["x-client-id"] = config.client_id
           req.headers["x-api-key"] = config.api_key
           req.headers.delete("Authorization")
@@ -85,12 +83,9 @@ module Airwallex
     private
 
     def request(method, path, data, headers)
-      ensure_authenticated!
-
       response = connection.public_send(method) do |req|
         req.url(path)
         req.headers.merge!(headers)
-        req.headers["Authorization"] = "Bearer #{access_token}"
 
         case method
         when :get, :delete
@@ -102,6 +97,16 @@ module Airwallex
 
       handle_response_errors(response)
       response.body
+    end
+
+    def configure_middleware(conn)
+      conn.use Airwallex::Middleware::Idempotency
+      conn.request :json
+      conn.request :multipart
+      conn.request :retry, retry_options
+      conn.use Airwallex::Middleware::AuthRefresh, self
+      conn.response :json, content_type: /\bjson$/
+      conn.response :logger, config.logger, { headers: true, bodies: true } if config.logger
     end
 
     def handle_response_errors(response)
