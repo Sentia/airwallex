@@ -56,7 +56,6 @@ module Airwallex
         response = connection.post(LOGIN_PATH) do |req|
           req.headers["x-client-id"] = config.client_id
           req.headers["x-api-key"] = config.api_key
-          req.headers.delete("Authorization")
         end
 
         handle_response_errors(response)
