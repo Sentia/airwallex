@@ -3,18 +3,6 @@
 require "spec_helper"
 
 RSpec.describe Airwallex::PaymentMethod do
-  let(:auth_response) do
-    {
-      status: 200,
-      body: { token: "test_token" }.to_json,
-      headers: { "Content-Type" => "application/json" }
-    }
-  end
-
-  before do
-    stub_request(:post, "https://api-demo.airwallex.com/api/v1/authentication/login")
-      .to_return(auth_response)
-  end
 
   describe ".resource_path" do
     it "returns correct path" do
@@ -62,7 +50,7 @@ RSpec.describe Airwallex::PaymentMethod do
     end
 
     before do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/pa/payment_methods/create")
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/payment_methods/create")
         .with(body: hash_including(type: "card"))
         .to_return(
           status: 200,
@@ -84,7 +72,7 @@ RSpec.describe Airwallex::PaymentMethod do
     it "sends POST request to correct endpoint" do
       described_class.create(create_params)
 
-      expect(WebMock).to have_requested(:post, "https://api-demo.airwallex.com/api/v1/pa/payment_methods/create")
+      expect(WebMock).to have_requested(:post, "#{BASE_URL}/api/v1/pa/payment_methods/create")
     end
 
     it "does not return full card number on creation" do
@@ -111,7 +99,7 @@ RSpec.describe Airwallex::PaymentMethod do
     end
 
     before do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/pa/payment_methods/pm_123")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_methods/pm_123")
         .to_return(
           status: 200,
           body: payment_method_response.to_json,
@@ -148,7 +136,7 @@ RSpec.describe Airwallex::PaymentMethod do
     end
 
     before do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/pa/payment_methods")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_methods")
         .with(query: { customer_id: "cus_123", page_size: 10 })
         .to_return(
           status: 200,
@@ -169,7 +157,7 @@ RSpec.describe Airwallex::PaymentMethod do
     it "filters by customer_id" do
       described_class.list(customer_id: "cus_123", page_size: 10)
 
-      expect(WebMock).to have_requested(:get, "https://api-demo.airwallex.com/api/v1/pa/payment_methods")
+      expect(WebMock).to have_requested(:get, "#{BASE_URL}/api/v1/pa/payment_methods")
         .with(query: hash_including(customer_id: "cus_123"))
     end
 
@@ -208,7 +196,7 @@ RSpec.describe Airwallex::PaymentMethod do
     end
 
     before do
-      stub_request(:put, "https://api-demo.airwallex.com/api/v1/pa/payment_methods/pm_123")
+      stub_request(:put, "#{BASE_URL}/api/v1/pa/payment_methods/pm_123")
         .to_return(
           status: 200,
           body: updated_response.to_json,
@@ -245,7 +233,7 @@ RSpec.describe Airwallex::PaymentMethod do
     end
 
     before do
-      stub_request(:put, "https://api-demo.airwallex.com/api/v1/pa/payment_methods/pm_123")
+      stub_request(:put, "#{BASE_URL}/api/v1/pa/payment_methods/pm_123")
         .to_return(
           status: 200,
           body: updated_response.to_json,
@@ -263,7 +251,7 @@ RSpec.describe Airwallex::PaymentMethod do
 
   describe ".delete" do
     before do
-      stub_request(:delete, "https://api-demo.airwallex.com/api/v1/pa/payment_methods/pm_123")
+      stub_request(:delete, "#{BASE_URL}/api/v1/pa/payment_methods/pm_123")
         .to_return(
           status: 200,
           body: {}.to_json,
@@ -280,7 +268,7 @@ RSpec.describe Airwallex::PaymentMethod do
     it "sends DELETE request" do
       described_class.delete("pm_123")
 
-      expect(WebMock).to have_requested(:delete, "https://api-demo.airwallex.com/api/v1/pa/payment_methods/pm_123")
+      expect(WebMock).to have_requested(:delete, "#{BASE_URL}/api/v1/pa/payment_methods/pm_123")
     end
   end
 
@@ -302,7 +290,7 @@ RSpec.describe Airwallex::PaymentMethod do
     end
 
     before do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/pa/payment_methods/pm_123/detach")
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/payment_methods/pm_123/detach")
         .to_return(
           status: 200,
           body: detached_response.to_json,
@@ -320,7 +308,7 @@ RSpec.describe Airwallex::PaymentMethod do
     it "sends POST request to detach endpoint" do
       pm.detach
 
-      expect(WebMock).to have_requested(:post, "https://api-demo.airwallex.com/api/v1/pa/payment_methods/pm_123/detach")
+      expect(WebMock).to have_requested(:post, "#{BASE_URL}/api/v1/pa/payment_methods/pm_123/detach")
     end
   end
 end

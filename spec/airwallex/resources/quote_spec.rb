@@ -3,18 +3,10 @@
 require "spec_helper"
 
 RSpec.describe Airwallex::Quote do
-  before do
-    stub_request(:post, "https://api-demo.airwallex.com/api/v1/authentication/login")
-      .to_return(
-        status: 200,
-        body: { token: "test_token", expires_at: (Time.now + 3600).iso8601 }.to_json,
-        headers: { "Content-Type" => "application/json" }
-      )
-  end
 
   describe ".create" do
     it "creates quote with sell_amount" do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/fx/quotes/create")
+      stub_request(:post, "#{BASE_URL}/api/v1/fx/quotes/create")
         .with(body: hash_including(
           from_currency: "USD",
           to_currency: "EUR",
@@ -51,7 +43,7 @@ RSpec.describe Airwallex::Quote do
     end
 
     it "creates quote with buy_amount" do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/fx/quotes/create")
+      stub_request(:post, "#{BASE_URL}/api/v1/fx/quotes/create")
         .with(body: hash_including(
           from_currency: "GBP",
           to_currency: "JPY",
@@ -86,7 +78,7 @@ RSpec.describe Airwallex::Quote do
 
   describe ".retrieve" do
     it "retrieves existing quote" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/fx/quotes/quote_123456")
+      stub_request(:get, "#{BASE_URL}/api/v1/fx/quotes/quote_123456")
         .to_return(
           status: 200,
           body: {
@@ -167,7 +159,7 @@ RSpec.describe Airwallex::Quote do
 
   describe "error handling" do
     it "handles expired quote on creation" do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/fx/quotes/create")
+      stub_request(:post, "#{BASE_URL}/api/v1/fx/quotes/create")
         .to_return(
           status: 400,
           body: {
@@ -187,7 +179,7 @@ RSpec.describe Airwallex::Quote do
     end
 
     it "handles missing amount parameter" do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/fx/quotes/create")
+      stub_request(:post, "#{BASE_URL}/api/v1/fx/quotes/create")
         .to_return(
           status: 400,
           body: {
@@ -206,7 +198,7 @@ RSpec.describe Airwallex::Quote do
     end
 
     it "handles quote not found" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/fx/quotes/nonexistent")
+      stub_request(:get, "#{BASE_URL}/api/v1/fx/quotes/nonexistent")
         .to_return(
           status: 404,
           body: {

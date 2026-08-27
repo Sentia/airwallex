@@ -13,18 +13,7 @@ RSpec.describe Airwallex::APIOperations::Create do
     end
   end
 
-  let(:auth_response) do
-    {
-      status: 200,
-      body: { token: "test_token" }.to_json,
-      headers: { "Content-Type" => "application/json" }
-    }
-  end
-
   before do
-    stub_request(:post, "https://api-demo.airwallex.com/api/v1/authentication/login")
-      .to_return(auth_response)
-
     stub_const("TestResource", test_class)
   end
 
@@ -46,7 +35,7 @@ RSpec.describe Airwallex::APIOperations::Create do
     end
 
     before do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/test_resources/create")
+      stub_request(:post, "#{BASE_URL}/api/v1/test_resources/create")
         .with(body: hash_including(create_params))
         .to_return(
           status: 200,
@@ -67,7 +56,7 @@ RSpec.describe Airwallex::APIOperations::Create do
     it "sends POST request to create endpoint" do
       TestResource.create(create_params)
 
-      expect(WebMock).to have_requested(:post, "https://api-demo.airwallex.com/api/v1/test_resources/create")
+      expect(WebMock).to have_requested(:post, "#{BASE_URL}/api/v1/test_resources/create")
         .with(body: hash_including(create_params))
     end
 

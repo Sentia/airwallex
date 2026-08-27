@@ -144,18 +144,9 @@ RSpec.describe Airwallex::ListObject do
   end
 
   describe "#next_page" do
-    before do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/authentication/login")
-        .to_return(
-          status: 200,
-          body: { token: "test_token" }.to_json,
-          headers: { "Content-Type" => "application/json" }
-        )
-    end
-
     context "with cursor pagination" do
       it "fetches next page using cursor" do
-        stub_request(:get, "https://api-demo.airwallex.com/api/v1/test_resources")
+        stub_request(:get, "#{BASE_URL}/api/v1/test_resources")
           .with(query: { next_cursor: "cursor_123", page_size: 10 })
           .to_return(
             status: 200,
@@ -186,7 +177,7 @@ RSpec.describe Airwallex::ListObject do
 
     context "with offset pagination" do
       it "fetches next page using offset" do
-        stub_request(:get, "https://api-demo.airwallex.com/api/v1/test_resources")
+        stub_request(:get, "#{BASE_URL}/api/v1/test_resources")
           .with(query: { offset: 20, page_size: 20 })
           .to_return(
             status: 200,
@@ -227,14 +218,7 @@ RSpec.describe Airwallex::ListObject do
 
   describe "#auto_paging_each" do
     before do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/authentication/login")
-        .to_return(
-          status: 200,
-          body: { token: "test_token" }.to_json,
-          headers: { "Content-Type" => "application/json" }
-        )
-
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/test_resources")
+      stub_request(:get, "#{BASE_URL}/api/v1/test_resources")
         .with(query: { page_size: 2 })
         .to_return(
           status: 200,
@@ -246,7 +230,7 @@ RSpec.describe Airwallex::ListObject do
           headers: { "Content-Type" => "application/json" }
         )
 
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/test_resources")
+      stub_request(:get, "#{BASE_URL}/api/v1/test_resources")
         .with(query: { page_size: 2, next_cursor: "cursor_1" })
         .to_return(
           status: 200,

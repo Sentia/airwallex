@@ -14,18 +14,7 @@ RSpec.describe Airwallex::APIOperations::Update do
     end
   end
 
-  let(:auth_response) do
-    {
-      status: 200,
-      body: { token: "test_token" }.to_json,
-      headers: { "Content-Type" => "application/json" }
-    }
-  end
-
   before do
-    stub_request(:post, "https://api-demo.airwallex.com/api/v1/authentication/login")
-      .to_return(auth_response)
-
     stub_const("TestResource", test_class)
   end
 
@@ -46,7 +35,7 @@ RSpec.describe Airwallex::APIOperations::Update do
     end
 
     before do
-      stub_request(:put, "https://api-demo.airwallex.com/api/v1/test_resources/test_123")
+      stub_request(:put, "#{BASE_URL}/api/v1/test_resources/test_123")
         .with(body: hash_including(update_params))
         .to_return(
           status: 200,
@@ -67,7 +56,7 @@ RSpec.describe Airwallex::APIOperations::Update do
     it "sends PUT request with params" do
       TestResource.update("test_123", update_params)
 
-      expect(WebMock).to have_requested(:put, "https://api-demo.airwallex.com/api/v1/test_resources/test_123")
+      expect(WebMock).to have_requested(:put, "#{BASE_URL}/api/v1/test_resources/test_123")
         .with(body: hash_including(update_params))
     end
   end
@@ -90,7 +79,7 @@ RSpec.describe Airwallex::APIOperations::Update do
     end
 
     before do
-      stub_request(:put, "https://api-demo.airwallex.com/api/v1/test_resources/test_123")
+      stub_request(:put, "#{BASE_URL}/api/v1/test_resources/test_123")
         .to_return(
           status: 200,
           body: update_response.to_json,
@@ -131,7 +120,7 @@ RSpec.describe Airwallex::APIOperations::Update do
 
     context "when attributes changed" do
       before do
-        stub_request(:put, "https://api-demo.airwallex.com/api/v1/test_resources/test_123")
+        stub_request(:put, "#{BASE_URL}/api/v1/test_resources/test_123")
           .to_return(
             status: 200,
             body: update_response.to_json,
@@ -152,7 +141,7 @@ RSpec.describe Airwallex::APIOperations::Update do
         resource.name = "Updated Name"
         resource.save
 
-        expect(WebMock).to have_requested(:put, "https://api-demo.airwallex.com/api/v1/test_resources/test_123")
+        expect(WebMock).to have_requested(:put, "#{BASE_URL}/api/v1/test_resources/test_123")
           .with(body: hash_including(name: "Updated Name"))
       end
 

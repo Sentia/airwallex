@@ -35,7 +35,7 @@ RSpec.describe Airwallex::Middleware::AuthRefresh do
   let(:middleware) { described_class.new(app, client) }
 
   def env_for(path)
-    { url: URI("https://api-demo.airwallex.com#{path}"), request_headers: {} }
+    { url: URI("#{BASE_URL}#{path}"), request_headers: {} }
   end
 
   def response_double(status)
@@ -44,7 +44,7 @@ RSpec.describe Airwallex::Middleware::AuthRefresh do
 
   describe "#call" do
     context "with the login endpoint" do
-      let(:env) { env_for("/api/v1/authentication/login") }
+      let(:env) { env_for(LOGIN_PATH) }
 
       it "does not ensure authentication or set the Authorization header" do
         allow(app).to receive(:call).and_return(response_double(200))

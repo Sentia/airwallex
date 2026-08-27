@@ -5,18 +5,9 @@ require "spec_helper"
 RSpec.describe Airwallex::BatchTransfer do
   let(:client) { Airwallex.client }
 
-  before do
-    stub_request(:post, "https://api-demo.airwallex.com/api/v1/authentication/login")
-      .to_return(
-        status: 200,
-        body: { token: "test_token", expires_at: (Time.now + 3600).iso8601 }.to_json,
-        headers: { "Content-Type" => "application/json" }
-      )
-  end
-
   describe ".create" do
     it "creates a batch transfer with multiple transfers" do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/batch_transfers/create")
+      stub_request(:post, "#{BASE_URL}/api/v1/batch_transfers/create")
         .to_return(
           status: 200,
           body: {
@@ -63,7 +54,7 @@ RSpec.describe Airwallex::BatchTransfer do
     end
 
     it "creates a batch transfer with single transfer" do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/batch_transfers/create")
+      stub_request(:post, "#{BASE_URL}/api/v1/batch_transfers/create")
         .to_return(
           status: 200,
           body: {
@@ -95,7 +86,7 @@ RSpec.describe Airwallex::BatchTransfer do
     it "handles idempotency with request_id" do
       request_id = "idempotent_batch_#{Time.now.to_i}"
 
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/batch_transfers/create")
+      stub_request(:post, "#{BASE_URL}/api/v1/batch_transfers/create")
         .with(body: hash_including(request_id: request_id))
         .to_return(
           status: 200,
@@ -126,7 +117,7 @@ RSpec.describe Airwallex::BatchTransfer do
 
   describe ".retrieve" do
     it "retrieves a batch transfer by ID" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/batch_transfers/batch_retrieve_123")
+      stub_request(:get, "#{BASE_URL}/api/v1/batch_transfers/batch_retrieve_123")
         .to_return(
           status: 200,
           body: {
@@ -157,7 +148,7 @@ RSpec.describe Airwallex::BatchTransfer do
     end
 
     it "shows individual transfer statuses" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/batch_transfers/batch_mixed")
+      stub_request(:get, "#{BASE_URL}/api/v1/batch_transfers/batch_mixed")
         .to_return(
           status: 200,
           body: {
@@ -182,7 +173,7 @@ RSpec.describe Airwallex::BatchTransfer do
 
   describe ".list" do
     it "lists batch transfers with pagination" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/batch_transfers")
+      stub_request(:get, "#{BASE_URL}/api/v1/batch_transfers")
         .with(query: hash_including(page_size: "10"))
         .to_return(
           status: 200,
@@ -206,7 +197,7 @@ RSpec.describe Airwallex::BatchTransfer do
     end
 
     it "filters batch transfers by status" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/batch_transfers")
+      stub_request(:get, "#{BASE_URL}/api/v1/batch_transfers")
         .with(query: hash_including(status: "COMPLETED"))
         .to_return(
           status: 200,
@@ -227,7 +218,7 @@ RSpec.describe Airwallex::BatchTransfer do
     end
 
     it "filters by date range" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/batch_transfers")
+      stub_request(:get, "#{BASE_URL}/api/v1/batch_transfers")
         .with(query: hash_including(
           from_created_at: "2025-11-01T00:00:00Z",
           to_created_at: "2025-11-30T23:59:59Z"
@@ -252,7 +243,7 @@ RSpec.describe Airwallex::BatchTransfer do
     end
 
     it "supports auto-paging" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/batch_transfers?page_size=2")
+      stub_request(:get, "#{BASE_URL}/api/v1/batch_transfers?page_size=2")
         .to_return(
           status: 200,
           body: {
@@ -265,7 +256,7 @@ RSpec.describe Airwallex::BatchTransfer do
           headers: { "Content-Type" => "application/json" }
         )
 
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/batch_transfers?offset=2&page_size=2")
+      stub_request(:get, "#{BASE_URL}/api/v1/batch_transfers?offset=2&page_size=2")
         .to_return(
           status: 200,
           body: {
@@ -288,7 +279,7 @@ RSpec.describe Airwallex::BatchTransfer do
 
   describe "error handling" do
     it "handles validation errors" do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/batch_transfers/create")
+      stub_request(:post, "#{BASE_URL}/api/v1/batch_transfers/create")
         .to_return(
           status: 400,
           body: {
@@ -307,7 +298,7 @@ RSpec.describe Airwallex::BatchTransfer do
     end
 
     it "handles insufficient funds error" do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/batch_transfers/create")
+      stub_request(:post, "#{BASE_URL}/api/v1/batch_transfers/create")
         .to_return(
           status: 400,
           body: {

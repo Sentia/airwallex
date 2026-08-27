@@ -3,18 +3,10 @@
 require "spec_helper"
 
 RSpec.describe Airwallex::Balance do
-  before do
-    stub_request(:post, "https://api-demo.airwallex.com/api/v1/authentication/login")
-      .to_return(
-        status: 200,
-        body: { token: "test_token", expires_at: (Time.now + 3600).iso8601 }.to_json,
-        headers: { "Content-Type" => "application/json" }
-      )
-  end
 
   describe ".list" do
     it "lists all balances" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/balances/current")
+      stub_request(:get, "#{BASE_URL}/api/v1/balances/current")
         .to_return(
           status: 200,
           body: {
@@ -56,7 +48,7 @@ RSpec.describe Airwallex::Balance do
     end
 
     it "filters balances by currency" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/balances/current")
+      stub_request(:get, "#{BASE_URL}/api/v1/balances/current")
         .with(query: hash_including(currency: "USD"))
         .to_return(
           status: 200,
@@ -82,7 +74,7 @@ RSpec.describe Airwallex::Balance do
 
   describe ".retrieve" do
     it "retrieves balance for specific currency" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/balances/current")
+      stub_request(:get, "#{BASE_URL}/api/v1/balances/current")
         .with(query: { currency: "USD" })
         .to_return(
           status: 200,
@@ -109,7 +101,7 @@ RSpec.describe Airwallex::Balance do
     end
 
     it "retrieves balance with zero amounts" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/balances/current")
+      stub_request(:get, "#{BASE_URL}/api/v1/balances/current")
         .with(query: { currency: "JPY" })
         .to_return(
           status: 200,
@@ -167,7 +159,7 @@ RSpec.describe Airwallex::Balance do
 
   describe "error handling" do
     it "handles invalid currency code" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/balances/current")
+      stub_request(:get, "#{BASE_URL}/api/v1/balances/current")
         .with(query: { currency: "XXX" })
         .to_return(
           status: 400,
@@ -184,7 +176,7 @@ RSpec.describe Airwallex::Balance do
     end
 
     it "handles currency not found" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/balances/current")
+      stub_request(:get, "#{BASE_URL}/api/v1/balances/current")
         .with(query: { currency: "AUD" })
         .to_return(
           status: 200,
@@ -201,7 +193,7 @@ RSpec.describe Airwallex::Balance do
     end
 
     it "handles SCA required error" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/balances/current")
+      stub_request(:get, "#{BASE_URL}/api/v1/balances/current")
         .to_return(
           status: 400,
           body: {

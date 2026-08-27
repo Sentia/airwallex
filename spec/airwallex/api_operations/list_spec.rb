@@ -13,18 +13,7 @@ RSpec.describe Airwallex::APIOperations::List do
     end
   end
 
-  let(:auth_response) do
-    {
-      status: 200,
-      body: { token: "test_token" }.to_json,
-      headers: { "Content-Type" => "application/json" }
-    }
-  end
-
   before do
-    stub_request(:post, "https://api-demo.airwallex.com/api/v1/authentication/login")
-      .to_return(auth_response)
-
     stub_const("TestResource", test_class)
   end
 
@@ -40,7 +29,7 @@ RSpec.describe Airwallex::APIOperations::List do
     end
 
     before do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/test_resources")
+      stub_request(:get, "#{BASE_URL}/api/v1/test_resources")
         .with(query: { page_size: 10 })
         .to_return(
           status: 200,
@@ -67,12 +56,12 @@ RSpec.describe Airwallex::APIOperations::List do
     it "sends GET request with query params" do
       TestResource.list(page_size: 10)
 
-      expect(WebMock).to have_requested(:get, "https://api-demo.airwallex.com/api/v1/test_resources")
+      expect(WebMock).to have_requested(:get, "#{BASE_URL}/api/v1/test_resources")
         .with(query: { page_size: 10 })
     end
 
     it "passes filters to API" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/test_resources")
+      stub_request(:get, "#{BASE_URL}/api/v1/test_resources")
         .with(query: { page_size: 20, status: "active" })
         .to_return(
           status: 200,
@@ -82,7 +71,7 @@ RSpec.describe Airwallex::APIOperations::List do
 
       TestResource.list(page_size: 20, status: "active")
 
-      expect(WebMock).to have_requested(:get, "https://api-demo.airwallex.com/api/v1/test_resources")
+      expect(WebMock).to have_requested(:get, "#{BASE_URL}/api/v1/test_resources")
         .with(query: { page_size: 20, status: "active" })
     end
   end

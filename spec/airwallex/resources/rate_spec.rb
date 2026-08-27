@@ -3,18 +3,10 @@
 require "spec_helper"
 
 RSpec.describe Airwallex::Rate do
-  before do
-    stub_request(:post, "https://api-demo.airwallex.com/api/v1/authentication/login")
-      .to_return(
-        status: 200,
-        body: { token: "test_token", expires_at: (Time.now + 3600).iso8601 }.to_json,
-        headers: { "Content-Type" => "application/json" }
-      )
-  end
 
   describe ".retrieve" do
     it "retrieves rate for currency pair" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/fx/rates/current")
+      stub_request(:get, "#{BASE_URL}/api/v1/fx/rates/current")
         .with(query: { from_currency: "USD", to_currency: "EUR" })
         .to_return(
           status: 200,
@@ -38,7 +30,7 @@ RSpec.describe Airwallex::Rate do
     end
 
     it "retrieves rate with different currency pair" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/fx/rates/current")
+      stub_request(:get, "#{BASE_URL}/api/v1/fx/rates/current")
         .with(query: { from_currency: "GBP", to_currency: "JPY" })
         .to_return(
           status: 200,
@@ -60,7 +52,7 @@ RSpec.describe Airwallex::Rate do
 
   describe ".list" do
     it "lists multiple rates" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/fx/rates/current")
+      stub_request(:get, "#{BASE_URL}/api/v1/fx/rates/current")
         .with(query: hash_including(from_currency: "USD"))
         .to_return(
           status: 200,
@@ -83,7 +75,7 @@ RSpec.describe Airwallex::Rate do
     end
 
     it "filters rates by to_currencies" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/fx/rates/current")
+      stub_request(:get, "#{BASE_URL}/api/v1/fx/rates/current")
         .with(query: hash_including(
           from_currency: "USD",
           to_currencies: "EUR,GBP"
@@ -111,7 +103,7 @@ RSpec.describe Airwallex::Rate do
 
   describe "error handling" do
     it "handles invalid currency code" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/fx/rates/current")
+      stub_request(:get, "#{BASE_URL}/api/v1/fx/rates/current")
         .with(query: { from_currency: "XXX", to_currency: "EUR" })
         .to_return(
           status: 400,
@@ -128,7 +120,7 @@ RSpec.describe Airwallex::Rate do
     end
 
     it "handles unsupported currency pair" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/fx/rates/current")
+      stub_request(:get, "#{BASE_URL}/api/v1/fx/rates/current")
         .with(query: { from_currency: "USD", to_currency: "BTC" })
         .to_return(
           status: 400,
