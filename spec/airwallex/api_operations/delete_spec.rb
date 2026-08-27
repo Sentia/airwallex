@@ -13,24 +13,13 @@ RSpec.describe Airwallex::APIOperations::Delete do
     end
   end
 
-  let(:auth_response) do
-    {
-      status: 200,
-      body: { token: "test_token" }.to_json,
-      headers: { "Content-Type" => "application/json" }
-    }
-  end
-
   before do
-    stub_request(:post, "https://api-demo.airwallex.com/api/v1/authentication/login")
-      .to_return(auth_response)
-
     stub_const("TestResource", test_class)
   end
 
   describe ".delete" do
     before do
-      stub_request(:delete, "https://api-demo.airwallex.com/api/v1/test_resources/test_123")
+      stub_request(:delete, "#{BASE_URL}/api/v1/test_resources/test_123")
         .to_return(
           status: 200,
           body: {}.to_json,
@@ -47,7 +36,7 @@ RSpec.describe Airwallex::APIOperations::Delete do
     it "sends DELETE request" do
       TestResource.delete("test_123")
 
-      expect(WebMock).to have_requested(:delete, "https://api-demo.airwallex.com/api/v1/test_resources/test_123")
+      expect(WebMock).to have_requested(:delete, "#{BASE_URL}/api/v1/test_resources/test_123")
     end
   end
 end

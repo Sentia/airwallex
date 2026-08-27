@@ -31,10 +31,7 @@ RSpec.describe Airwallex::Client do
       }
     end
 
-    before do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/authentication/login")
-        .to_return(success_response)
-    end
+    before { stub_login(token: "test_token_123") }
 
     it "exchanges credentials for access token" do
       token = client.authenticate!
@@ -53,7 +50,7 @@ RSpec.describe Airwallex::Client do
     end
 
     it "sends correct headers" do
-      stub = stub_request(:post, "https://api-demo.airwallex.com/api/v1/authentication/login")
+      stub = stub_request(:post, "#{BASE_URL}#{LOGIN_PATH}")
         .with(
           headers: {
             "x-client-id" => "test_client_id",
@@ -76,7 +73,7 @@ RSpec.describe Airwallex::Client do
       end
 
       before do
-        stub_request(:post, "https://api-demo.airwallex.com/api/v1/authentication/login")
+        stub_request(:post, "#{BASE_URL}#{LOGIN_PATH}")
           .to_return(error_response)
       end
 
@@ -105,18 +102,7 @@ RSpec.describe Airwallex::Client do
   end
 
   describe "#ensure_authenticated!" do
-    let(:success_response) do
-      {
-        status: 200,
-        body: { token: "test_token_123", expires_at: (Time.now + 1800).to_i }.to_json,
-        headers: { "Content-Type" => "application/json" }
-      }
-    end
-
-    before do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/authentication/login")
-        .to_return(success_response)
-    end
+    before { stub_login(token: "test_token_123") }
 
     it "authenticates when token is expired" do
       expect(client.access_token).to be_nil
@@ -139,7 +125,7 @@ RSpec.describe Airwallex::Client do
     end
 
     it "sets correct base URL" do
-      expect(client.connection.url_prefix.to_s).to eq("https://api-demo.airwallex.com/")
+      expect(client.connection.url_prefix.to_s).to eq("#{BASE_URL}/")
     end
 
     it "includes required headers" do

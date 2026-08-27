@@ -3,18 +3,6 @@
 require "spec_helper"
 
 RSpec.describe Airwallex::Customer do
-  let(:auth_response) do
-    {
-      status: 200,
-      body: { token: "test_token" }.to_json,
-      headers: { "Content-Type" => "application/json" }
-    }
-  end
-
-  before do
-    stub_request(:post, "https://api-demo.airwallex.com/api/v1/authentication/login")
-      .to_return(auth_response)
-  end
 
   describe ".resource_path" do
     it "returns correct path" do
@@ -44,7 +32,7 @@ RSpec.describe Airwallex::Customer do
     end
 
     before do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/pa/customers/create")
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/customers/create")
         .with(body: hash_including(email: "john@example.com"))
         .to_return(
           status: 200,
@@ -66,7 +54,7 @@ RSpec.describe Airwallex::Customer do
     it "sends POST request to correct endpoint" do
       described_class.create(create_params)
 
-      expect(WebMock).to have_requested(:post, "https://api-demo.airwallex.com/api/v1/pa/customers/create")
+      expect(WebMock).to have_requested(:post, "#{BASE_URL}/api/v1/pa/customers/create")
     end
   end
 
@@ -81,7 +69,7 @@ RSpec.describe Airwallex::Customer do
     end
 
     before do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/pa/customers/cus_123")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/customers/cus_123")
         .to_return(
           status: 200,
           body: customer_response.to_json,
@@ -110,7 +98,7 @@ RSpec.describe Airwallex::Customer do
     end
 
     before do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/pa/customers")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/customers")
         .with(query: { page_size: 10 })
         .to_return(
           status: 200,
@@ -153,7 +141,7 @@ RSpec.describe Airwallex::Customer do
     end
 
     before do
-      stub_request(:put, "https://api-demo.airwallex.com/api/v1/pa/customers/cus_123")
+      stub_request(:put, "#{BASE_URL}/api/v1/pa/customers/cus_123")
         .to_return(
           status: 200,
           body: updated_response.to_json,
@@ -188,7 +176,7 @@ RSpec.describe Airwallex::Customer do
     end
 
     before do
-      stub_request(:put, "https://api-demo.airwallex.com/api/v1/pa/customers/cus_123")
+      stub_request(:put, "#{BASE_URL}/api/v1/pa/customers/cus_123")
         .to_return(
           status: 200,
           body: updated_response.to_json,
@@ -206,7 +194,7 @@ RSpec.describe Airwallex::Customer do
 
   describe ".delete" do
     before do
-      stub_request(:delete, "https://api-demo.airwallex.com/api/v1/pa/customers/cus_123")
+      stub_request(:delete, "#{BASE_URL}/api/v1/pa/customers/cus_123")
         .to_return(
           status: 200,
           body: {}.to_json,
@@ -223,7 +211,7 @@ RSpec.describe Airwallex::Customer do
     it "sends DELETE request" do
       described_class.delete("cus_123")
 
-      expect(WebMock).to have_requested(:delete, "https://api-demo.airwallex.com/api/v1/pa/customers/cus_123")
+      expect(WebMock).to have_requested(:delete, "#{BASE_URL}/api/v1/pa/customers/cus_123")
     end
   end
 
@@ -243,7 +231,7 @@ RSpec.describe Airwallex::Customer do
     end
 
     before do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/pa/payment_methods")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_methods")
         .with(query: { customer_id: "cus_123" })
         .to_return(
           status: 200,
@@ -263,12 +251,12 @@ RSpec.describe Airwallex::Customer do
     it "passes customer_id to list call" do
       customer.payment_methods
 
-      expect(WebMock).to have_requested(:get, "https://api-demo.airwallex.com/api/v1/pa/payment_methods")
+      expect(WebMock).to have_requested(:get, "#{BASE_URL}/api/v1/pa/payment_methods")
         .with(query: hash_including(customer_id: "cus_123"))
     end
 
     it "accepts additional parameters" do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/pa/payment_methods")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_methods")
         .with(query: { customer_id: "cus_123", type: "card" })
         .to_return(
           status: 200,
@@ -278,7 +266,7 @@ RSpec.describe Airwallex::Customer do
 
       customer.payment_methods(type: "card")
 
-      expect(WebMock).to have_requested(:get, "https://api-demo.airwallex.com/api/v1/pa/payment_methods")
+      expect(WebMock).to have_requested(:get, "#{BASE_URL}/api/v1/pa/payment_methods")
         .with(query: { customer_id: "cus_123", type: "card" })
     end
   end

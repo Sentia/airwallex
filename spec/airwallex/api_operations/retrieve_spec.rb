@@ -13,18 +13,7 @@ RSpec.describe Airwallex::APIOperations::Retrieve do
     end
   end
 
-  let(:auth_response) do
-    {
-      status: 200,
-      body: { token: "test_token" }.to_json,
-      headers: { "Content-Type" => "application/json" }
-    }
-  end
-
   before do
-    stub_request(:post, "https://api-demo.airwallex.com/api/v1/authentication/login")
-      .to_return(auth_response)
-
     stub_const("TestResource", test_class)
   end
 
@@ -38,7 +27,7 @@ RSpec.describe Airwallex::APIOperations::Retrieve do
     end
 
     before do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/test_resources/test_123")
+      stub_request(:get, "#{BASE_URL}/api/v1/test_resources/test_123")
         .to_return(
           status: 200,
           body: retrieve_response.to_json,
@@ -58,7 +47,7 @@ RSpec.describe Airwallex::APIOperations::Retrieve do
     it "sends GET request to resource endpoint" do
       TestResource.retrieve("test_123")
 
-      expect(WebMock).to have_requested(:get, "https://api-demo.airwallex.com/api/v1/test_resources/test_123")
+      expect(WebMock).to have_requested(:get, "#{BASE_URL}/api/v1/test_resources/test_123")
     end
 
     it "returns instance of calling class" do

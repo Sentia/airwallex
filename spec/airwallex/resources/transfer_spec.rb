@@ -3,18 +3,6 @@
 require "spec_helper"
 
 RSpec.describe Airwallex::Transfer do
-  let(:auth_response) do
-    {
-      status: 200,
-      body: { token: "test_token" }.to_json,
-      headers: { "Content-Type" => "application/json" }
-    }
-  end
-
-  before do
-    stub_request(:post, "https://api-demo.airwallex.com/api/v1/authentication/login")
-      .to_return(auth_response)
-  end
 
   describe ".resource_path" do
     it "returns correct path" do
@@ -45,7 +33,7 @@ RSpec.describe Airwallex::Transfer do
     end
 
     before do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/transfers/create")
+      stub_request(:post, "#{BASE_URL}/api/v1/transfers/create")
         .with(body: hash_including(create_params))
         .to_return(
           status: 200,
@@ -66,7 +54,7 @@ RSpec.describe Airwallex::Transfer do
     it "sends POST request to correct endpoint" do
       described_class.create(create_params)
 
-      expect(WebMock).to have_requested(:post, "https://api-demo.airwallex.com/api/v1/transfers/create")
+      expect(WebMock).to have_requested(:post, "#{BASE_URL}/api/v1/transfers/create")
     end
   end
 
@@ -82,7 +70,7 @@ RSpec.describe Airwallex::Transfer do
     end
 
     before do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/transfers/tfr_123")
+      stub_request(:get, "#{BASE_URL}/api/v1/transfers/tfr_123")
         .to_return(
           status: 200,
           body: transfer_response.to_json,
@@ -111,7 +99,7 @@ RSpec.describe Airwallex::Transfer do
     end
 
     before do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/transfers")
+      stub_request(:get, "#{BASE_URL}/api/v1/transfers")
         .with(query: { page_size: 20 })
         .to_return(
           status: 200,
@@ -156,7 +144,7 @@ RSpec.describe Airwallex::Transfer do
     end
 
     before do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/transfers/tfr_123/cancel")
+      stub_request(:post, "#{BASE_URL}/api/v1/transfers/tfr_123/cancel")
         .to_return(
           status: 200,
           body: cancelled_response.to_json,
@@ -174,7 +162,7 @@ RSpec.describe Airwallex::Transfer do
     it "sends POST request to cancel endpoint" do
       transfer.cancel
 
-      expect(WebMock).to have_requested(:post, "https://api-demo.airwallex.com/api/v1/transfers/tfr_123/cancel")
+      expect(WebMock).to have_requested(:post, "#{BASE_URL}/api/v1/transfers/tfr_123/cancel")
     end
   end
 end

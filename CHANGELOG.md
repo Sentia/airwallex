@@ -1,5 +1,17 @@
 ## [Unreleased]
 
+### Fixed
+- `Idempotency` and `AuthRefresh` middleware are now actually registered on the Faraday connection.
+  Previously both classes existed but were never wired in, so the "automatic `request_id` generation"
+  and "retry once after a 401" behavior documented in the README did not happen at runtime.
+- Fixed a bug in `AuthRefresh` where the 401-retry guard used `env[:request][:auth_retry]`, a key that
+  doesn't exist on `Faraday::RequestOptions` and would have raised `NoMethodError` the first time it ran.
+- CI now triggers on pushes to `main` (previously configured for `master`, so pushes never ran CI).
+
+### Changed
+- `Client#request` no longer manually manages the `Authorization` header or calls
+  `ensure_authenticated!` directly; this is now owned by the `AuthRefresh` middleware.
+
 ## [0.3.0] - 2025-11-25
 
 ### Added

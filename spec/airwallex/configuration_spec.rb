@@ -41,7 +41,7 @@ RSpec.describe Airwallex::Configuration do
       before { config.environment = :sandbox }
 
       it "returns the sandbox API URL" do
-        expect(config.api_url).to eq("https://api-demo.airwallex.com")
+        expect(config.api_url).to eq(BASE_URL)
       end
     end
 

@@ -6,12 +6,16 @@ require "webmock/rspec"
 # Configure WebMock to block all real HTTP requests
 WebMock.disable_net_connect!(allow_localhost: false)
 
+Dir[File.join(__dir__, "support", "**", "*.rb")].sort.each { |f| require f }
+
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
   config.example_status_persistence_file_path = ".rspec_status"
 
   # Disable RSpec exposing methods globally on `Module` and `main`
   config.disable_monkey_patching!
+
+  config.include AirwallexTestHelpers
 
   config.expect_with :rspec do |c|
     c.syntax = :expect
@@ -25,6 +29,8 @@ RSpec.configure do |config|
       c.client_id = "test_client_id"
       c.environment = :sandbox
     end
+
+    stub_login
   end
 
   # Clean up after each test

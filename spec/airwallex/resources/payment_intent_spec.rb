@@ -3,18 +3,6 @@
 require "spec_helper"
 
 RSpec.describe Airwallex::PaymentIntent do
-  let(:auth_response) do
-    {
-      status: 200,
-      body: { token: "test_token" }.to_json,
-      headers: { "Content-Type" => "application/json" }
-    }
-  end
-
-  before do
-    stub_request(:post, "https://api-demo.airwallex.com/api/v1/authentication/login")
-      .to_return(auth_response)
-  end
 
   describe ".resource_path" do
     it "returns correct path" do
@@ -43,7 +31,7 @@ RSpec.describe Airwallex::PaymentIntent do
     end
 
     before do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/pa/payment_intents/create")
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/payment_intents/create")
         .with(body: hash_including(create_params))
         .to_return(
           status: 200,
@@ -65,7 +53,7 @@ RSpec.describe Airwallex::PaymentIntent do
     it "sends POST request to correct endpoint" do
       described_class.create(create_params)
 
-      expect(WebMock).to have_requested(:post, "https://api-demo.airwallex.com/api/v1/pa/payment_intents/create")
+      expect(WebMock).to have_requested(:post, "#{BASE_URL}/api/v1/pa/payment_intents/create")
         .with(body: hash_including(create_params))
     end
   end
@@ -81,7 +69,7 @@ RSpec.describe Airwallex::PaymentIntent do
     end
 
     before do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/pa/payment_intents/pi_123")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_intents/pi_123")
         .to_return(
           status: 200,
           body: intent_response.to_json,
@@ -110,7 +98,7 @@ RSpec.describe Airwallex::PaymentIntent do
     end
 
     before do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/pa/payment_intents")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_intents")
         .with(query: { page_size: 10 })
         .to_return(
           status: 200,
@@ -153,7 +141,7 @@ RSpec.describe Airwallex::PaymentIntent do
     end
 
     before do
-      stub_request(:put, "https://api-demo.airwallex.com/api/v1/pa/payment_intents/pi_123")
+      stub_request(:put, "#{BASE_URL}/api/v1/pa/payment_intents/pi_123")
         .with(body: hash_including(update_params))
         .to_return(
           status: 200,
@@ -200,7 +188,7 @@ RSpec.describe Airwallex::PaymentIntent do
     end
 
     before do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/pa/payment_intents/pi_123/confirm")
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/payment_intents/pi_123/confirm")
         .with(body: hash_including(confirm_params))
         .to_return(
           status: 200,
@@ -219,7 +207,7 @@ RSpec.describe Airwallex::PaymentIntent do
     it "sends POST request to confirm endpoint" do
       intent.confirm(confirm_params)
 
-      expect(WebMock).to have_requested(:post, "https://api-demo.airwallex.com/api/v1/pa/payment_intents/pi_123/confirm")
+      expect(WebMock).to have_requested(:post, "#{BASE_URL}/api/v1/pa/payment_intents/pi_123/confirm")
     end
   end
 
@@ -249,7 +237,7 @@ RSpec.describe Airwallex::PaymentIntent do
     end
 
     before do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/pa/payment_intents/pi_123/cancel")
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/payment_intents/pi_123/cancel")
         .with(body: hash_including(cancel_params))
         .to_return(
           status: 200,
@@ -294,7 +282,7 @@ RSpec.describe Airwallex::PaymentIntent do
     end
 
     before do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/pa/payment_intents/pi_123/capture")
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/payment_intents/pi_123/capture")
         .with(body: hash_including(capture_params))
         .to_return(
           status: 200,
@@ -336,7 +324,7 @@ RSpec.describe Airwallex::PaymentIntent do
     end
 
     before do
-      stub_request(:put, "https://api-demo.airwallex.com/api/v1/pa/payment_intents/pi_123")
+      stub_request(:put, "#{BASE_URL}/api/v1/pa/payment_intents/pi_123")
         .with(body: hash_including(update_params))
         .to_return(
           status: 200,
@@ -371,7 +359,7 @@ RSpec.describe Airwallex::PaymentIntent do
     end
 
     before do
-      stub_request(:put, "https://api-demo.airwallex.com/api/v1/pa/payment_intents/pi_123")
+      stub_request(:put, "#{BASE_URL}/api/v1/pa/payment_intents/pi_123")
         .to_return(
           status: 200,
           body: updated_response.to_json,

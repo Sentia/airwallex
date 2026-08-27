@@ -3,18 +3,6 @@
 require "spec_helper"
 
 RSpec.describe Airwallex::Beneficiary do
-  let(:auth_response) do
-    {
-      status: 200,
-      body: { token: "test_token" }.to_json,
-      headers: { "Content-Type" => "application/json" }
-    }
-  end
-
-  before do
-    stub_request(:post, "https://api-demo.airwallex.com/api/v1/authentication/login")
-      .to_return(auth_response)
-  end
 
   describe ".resource_path" do
     it "returns correct path" do
@@ -50,7 +38,7 @@ RSpec.describe Airwallex::Beneficiary do
     end
 
     before do
-      stub_request(:post, "https://api-demo.airwallex.com/api/v1/beneficiaries/create")
+      stub_request(:post, "#{BASE_URL}/api/v1/beneficiaries/create")
         .with(body: hash_including(create_params))
         .to_return(
           status: 200,
@@ -71,7 +59,7 @@ RSpec.describe Airwallex::Beneficiary do
     it "sends POST request to correct endpoint" do
       described_class.create(create_params)
 
-      expect(WebMock).to have_requested(:post, "https://api-demo.airwallex.com/api/v1/beneficiaries/create")
+      expect(WebMock).to have_requested(:post, "#{BASE_URL}/api/v1/beneficiaries/create")
     end
   end
 
@@ -89,7 +77,7 @@ RSpec.describe Airwallex::Beneficiary do
     end
 
     before do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/beneficiaries/ben_123")
+      stub_request(:get, "#{BASE_URL}/api/v1/beneficiaries/ben_123")
         .to_return(
           status: 200,
           body: beneficiary_response.to_json,
@@ -118,7 +106,7 @@ RSpec.describe Airwallex::Beneficiary do
     end
 
     before do
-      stub_request(:get, "https://api-demo.airwallex.com/api/v1/beneficiaries")
+      stub_request(:get, "#{BASE_URL}/api/v1/beneficiaries")
         .with(query: { page_size: 20 })
         .to_return(
           status: 200,
@@ -145,7 +133,7 @@ RSpec.describe Airwallex::Beneficiary do
 
   describe ".delete" do
     before do
-      stub_request(:delete, "https://api-demo.airwallex.com/api/v1/beneficiaries/ben_123")
+      stub_request(:delete, "#{BASE_URL}/api/v1/beneficiaries/ben_123")
         .to_return(
           status: 200,
           body: {}.to_json,
@@ -162,7 +150,7 @@ RSpec.describe Airwallex::Beneficiary do
     it "sends DELETE request to correct endpoint" do
       described_class.delete("ben_123")
 
-      expect(WebMock).to have_requested(:delete, "https://api-demo.airwallex.com/api/v1/beneficiaries/ben_123")
+      expect(WebMock).to have_requested(:delete, "#{BASE_URL}/api/v1/beneficiaries/ben_123")
     end
   end
 end
