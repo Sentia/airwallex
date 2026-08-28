@@ -1,5 +1,23 @@
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-28
+
+### Fixed
+- `Webhook::Event` now correctly exposes the event type. Airwallex sends this field as `"name"` in
+  the webhook payload, not `"type"` — the previous `Event#type` reader was reading a key that doesn't
+  exist and always returned `nil`. The accessor is renamed to `Event#name` to match Airwallex's actual
+  field. **Breaking change:** `event.type` → `event.name`.
+
+## [0.5.0] - 2026-08-28
+
+### Fixed
+- Webhook signature verification no longer rejects valid webhooks when Airwallex sends
+  millisecond-precision timestamps. `verify_timestamp` now detects millisecond values (anything at or
+  above `MS_THRESHOLD = 10_000_000_000`, which safely distinguishes seconds from milliseconds until the
+  year 2286) and normalizes them to seconds before comparing against the tolerance window.
+
+## [0.4.0] - 2026-08-27
+
 ### Fixed
 - `Idempotency` and `AuthRefresh` middleware are now actually registered on the Faraday connection.
   Previously both classes existed but were never wired in, so the "automatic `request_id` generation"
@@ -15,13 +33,15 @@
 ## [0.3.0] - 2025-11-25
 
 ### Added
+- BatchTransfer resource (create, retrieve, list) for bulk payout operations
+- Dispute resource (retrieve, list, accept, submit_evidence) for chargeback management
 - Foreign Exchange resources:
   - Rate resource (retrieve, list) for real-time exchange rate queries
   - Quote resource (create, retrieve) for locking exchange rates with expiration helpers
   - Conversion resource (create, retrieve, list) for executing currency conversions
   - Balance resource (list, retrieve) for querying account balances across currencies
 - Enhanced List operation to handle both array responses and paginated responses
-- 38 new tests (278 total) covering FX and balance operations
+- 63 new tests (278 total) covering batch transfers, disputes, FX, and balance operations
 - Comprehensive manual test suite for regression testing
 
 ### Changed
@@ -30,13 +50,6 @@
 
 ### Fixed
 - List operation now correctly handles Balance API's direct array response format
-
-## [0.2.1] - 2025-11-25
-
-### Added
-- BatchTransfer resource (create, retrieve, list) for bulk payout operations
-- Dispute resource (retrieve, list, accept, submit_evidence) for chargeback management
-- 25 new tests (240 total) covering batch transfers and disputes
 
 ## [0.2.0] - 2025-11-25
 
