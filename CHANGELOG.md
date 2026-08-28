@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-28
+
 ### Added
 - GlobalAccount resource (create, retrieve, list, update, `#close`, `#generate_statement_letter`,
   `#transactions`)
