@@ -7,7 +7,7 @@ RSpec.describe Airwallex::Dispute do
 
   describe ".retrieve" do
     it "retrieves a dispute by ID" do
-      stub_request(:get, "#{BASE_URL}/api/v1/disputes/dis_123")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_disputes/dis_123")
         .to_return(
           status: 200,
           body: {
@@ -34,7 +34,7 @@ RSpec.describe Airwallex::Dispute do
     end
 
     it "retrieves dispute with evidence deadline" do
-      stub_request(:get, "#{BASE_URL}/api/v1/disputes/dis_urgent")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_disputes/dis_urgent")
         .to_return(
           status: 200,
           body: {
@@ -55,7 +55,7 @@ RSpec.describe Airwallex::Dispute do
 
   describe ".list" do
     it "lists all disputes" do
-      stub_request(:get, "#{BASE_URL}/api/v1/disputes")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_disputes")
         .with(query: hash_including(page_size: "20"))
         .to_return(
           status: 200,
@@ -78,7 +78,7 @@ RSpec.describe Airwallex::Dispute do
     end
 
     it "filters disputes by status" do
-      stub_request(:get, "#{BASE_URL}/api/v1/disputes")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_disputes")
         .with(query: hash_including(status: "OPEN"))
         .to_return(
           status: 200,
@@ -99,7 +99,7 @@ RSpec.describe Airwallex::Dispute do
     end
 
     it "filters disputes by payment_intent_id" do
-      stub_request(:get, "#{BASE_URL}/api/v1/disputes")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_disputes")
         .with(query: hash_including(payment_intent_id: "int_abc123"))
         .to_return(
           status: 200,
@@ -119,7 +119,7 @@ RSpec.describe Airwallex::Dispute do
     end
 
     it "filters by reason" do
-      stub_request(:get, "#{BASE_URL}/api/v1/disputes")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_disputes")
         .with(query: hash_including(reason: "product_not_received"))
         .to_return(
           status: 200,
@@ -138,7 +138,7 @@ RSpec.describe Airwallex::Dispute do
     end
 
     it "supports auto-paging" do
-      stub_request(:get, "#{BASE_URL}/api/v1/disputes?page_size=2")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_disputes?page_size=2")
         .to_return(
           status: 200,
           body: {
@@ -151,7 +151,7 @@ RSpec.describe Airwallex::Dispute do
           headers: { "Content-Type" => "application/json" }
         )
 
-      stub_request(:get, "#{BASE_URL}/api/v1/disputes?offset=2&page_size=2")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_disputes?offset=2&page_size=2")
         .to_return(
           status: 200,
           body: {
@@ -177,7 +177,7 @@ RSpec.describe Airwallex::Dispute do
       dispute_id = "dis_accept_123"
 
       # First retrieve
-      stub_request(:get, "#{BASE_URL}/api/v1/disputes/#{dispute_id}")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_disputes/#{dispute_id}")
         .to_return(
           status: 200,
           body: {
@@ -189,7 +189,7 @@ RSpec.describe Airwallex::Dispute do
         )
 
       # Then accept
-      stub_request(:post, "#{BASE_URL}/api/v1/disputes/#{dispute_id}/accept")
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/payment_disputes/#{dispute_id}/accept")
         .to_return(
           status: 200,
           body: {
@@ -209,12 +209,59 @@ RSpec.describe Airwallex::Dispute do
     end
   end
 
-  describe "#submit_evidence" do
-    it "submits evidence to challenge a dispute" do
+  describe "#update" do
+    let(:dispute) { described_class.new(id: "dis_123", status: "OPEN") }
+
+    before do
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/payment_disputes/dis_123/update")
+        .with(body: hash_including(metadata: { internal_ref: "case_1" }))
+        .to_return(
+          status: 200,
+          body: { id: "dis_123", metadata: { internal_ref: "case_1" } }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+    end
+
+    it "updates dispute metadata" do
+      result = dispute.update(metadata: { internal_ref: "case_1" })
+
+      expect(result).to eq(dispute)
+      expect(dispute.metadata[:internal_ref]).to eq("case_1")
+    end
+  end
+
+  describe "#related_payment_intents" do
+    let(:dispute) { described_class.new(id: "dis_123") }
+
+    before do
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_disputes/dis_123/related_payment_intents")
+        .to_return(
+          status: 200,
+          body: {
+            items: [
+              { id: "int_1", status: "SUCCEEDED" }
+            ],
+            has_more: false
+          }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+    end
+
+    it "lists payment intents related to the dispute" do
+      result = dispute.related_payment_intents
+
+      expect(result).to be_a(Airwallex::ListObject)
+      expect(result.first).to be_a(Airwallex::PaymentIntent)
+      expect(result.first.id).to eq("int_1")
+    end
+  end
+
+  describe "#challenge" do
+    it "challenges a dispute with evidence" do
       dispute_id = "dis_challenge_123"
 
       # First retrieve
-      stub_request(:get, "#{BASE_URL}/api/v1/disputes/#{dispute_id}")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_disputes/#{dispute_id}")
         .to_return(
           status: 200,
           body: {
@@ -226,7 +273,7 @@ RSpec.describe Airwallex::Dispute do
         )
 
       # Then submit evidence
-      stub_request(:post, "#{BASE_URL}/api/v1/disputes/#{dispute_id}/evidence")
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/payment_disputes/#{dispute_id}/challenge")
         .with(
           body: hash_including(
             customer_communication: "Email thread",
@@ -248,7 +295,7 @@ RSpec.describe Airwallex::Dispute do
         )
 
       dispute = described_class.retrieve(dispute_id)
-      result = dispute.submit_evidence(
+      result = dispute.challenge(
         customer_communication: "Email thread",
         shipping_tracking_number: "1Z999AA10123456784"
       )
@@ -258,17 +305,17 @@ RSpec.describe Airwallex::Dispute do
       expect(dispute.status).to eq("UNDER_REVIEW")
     end
 
-    it "submits comprehensive evidence" do
+    it "challenges with comprehensive evidence" do
       dispute_id = "dis_full_evidence"
 
-      stub_request(:get, "#{BASE_URL}/api/v1/disputes/#{dispute_id}")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_disputes/#{dispute_id}")
         .to_return(
           status: 200,
           body: { id: dispute_id, status: "OPEN" }.to_json,
           headers: { "Content-Type" => "application/json" }
         )
 
-      stub_request(:post, "#{BASE_URL}/api/v1/disputes/#{dispute_id}/evidence")
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/payment_disputes/#{dispute_id}/challenge")
         .with(
           body: hash_including(
             customer_communication: "Full email exchange",
@@ -289,7 +336,7 @@ RSpec.describe Airwallex::Dispute do
         )
 
       dispute = described_class.retrieve(dispute_id)
-      result = dispute.submit_evidence(
+      result = dispute.challenge(
         customer_communication: "Full email exchange",
         shipping_documentation: "Proof of delivery",
         customer_signature: "Signed receipt",
@@ -301,17 +348,17 @@ RSpec.describe Airwallex::Dispute do
       expect(result.status).to eq("UNDER_REVIEW")
     end
 
-    it "handles evidence submission errors" do
+    it "handles challenge errors" do
       dispute_id = "dis_error"
 
-      stub_request(:get, "#{BASE_URL}/api/v1/disputes/#{dispute_id}")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_disputes/#{dispute_id}")
         .to_return(
           status: 200,
           body: { id: dispute_id, status: "OPEN" }.to_json,
           headers: { "Content-Type" => "application/json" }
         )
 
-      stub_request(:post, "#{BASE_URL}/api/v1/disputes/#{dispute_id}/evidence")
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/payment_disputes/#{dispute_id}/challenge")
         .to_return(
           status: 400,
           body: {
@@ -324,7 +371,7 @@ RSpec.describe Airwallex::Dispute do
       dispute = described_class.retrieve(dispute_id)
 
       expect do
-        dispute.submit_evidence(
+        dispute.challenge(
           customer_communication: "Too late"
         )
       end.to raise_error(Airwallex::BadRequestError, /Evidence submission deadline has passed/)
@@ -333,7 +380,7 @@ RSpec.describe Airwallex::Dispute do
 
   describe "error handling" do
     it "handles dispute not found" do
-      stub_request(:get, "#{BASE_URL}/api/v1/disputes/dis_missing")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_disputes/dis_missing")
         .to_return(
           status: 404,
           body: {
@@ -349,7 +396,7 @@ RSpec.describe Airwallex::Dispute do
     end
 
     it "handles invalid status filter" do
-      stub_request(:get, "#{BASE_URL}/api/v1/disputes")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_disputes")
         .with(query: hash_including(status: "INVALID_STATUS"))
         .to_return(
           status: 400,
@@ -368,14 +415,14 @@ RSpec.describe Airwallex::Dispute do
     it "handles permission errors for accept" do
       dispute_id = "dis_forbidden"
 
-      stub_request(:get, "#{BASE_URL}/api/v1/disputes/#{dispute_id}")
+      stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_disputes/#{dispute_id}")
         .to_return(
           status: 200,
           body: { id: dispute_id, status: "WON" }.to_json,
           headers: { "Content-Type" => "application/json" }
         )
 
-      stub_request(:post, "#{BASE_URL}/api/v1/disputes/#{dispute_id}/accept")
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/payment_disputes/#{dispute_id}/accept")
         .to_return(
           status: 403,
           body: {

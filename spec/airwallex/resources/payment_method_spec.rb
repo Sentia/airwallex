@@ -196,7 +196,7 @@ RSpec.describe Airwallex::PaymentMethod do
     end
 
     before do
-      stub_request(:put, "#{BASE_URL}/api/v1/pa/payment_methods/pm_123")
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/payment_methods/pm_123/update")
         .to_return(
           status: 200,
           body: updated_response.to_json,
@@ -233,7 +233,7 @@ RSpec.describe Airwallex::PaymentMethod do
     end
 
     before do
-      stub_request(:put, "#{BASE_URL}/api/v1/pa/payment_methods/pm_123")
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/payment_methods/pm_123/update")
         .to_return(
           status: 200,
           body: updated_response.to_json,
@@ -249,66 +249,45 @@ RSpec.describe Airwallex::PaymentMethod do
     end
   end
 
-  describe ".delete" do
-    before do
-      stub_request(:delete, "#{BASE_URL}/api/v1/pa/payment_methods/pm_123")
-        .to_return(
-          status: 200,
-          body: {}.to_json,
-          headers: { "Content-Type" => "application/json" }
-        )
-    end
-
-    it "deletes payment method" do
-      result = described_class.delete("pm_123")
-
-      expect(result).to be true
-    end
-
-    it "sends DELETE request" do
-      described_class.delete("pm_123")
-
-      expect(WebMock).to have_requested(:delete, "#{BASE_URL}/api/v1/pa/payment_methods/pm_123")
-    end
-  end
-
-  describe "#detach" do
+  describe "#disable" do
     let(:pm) do
       described_class.new(
         id: "pm_123",
         customer_id: "cus_123",
-        type: "card"
+        type: "card",
+        status: "CREATED"
       )
     end
 
-    let(:detached_response) do
+    let(:disabled_response) do
       {
         id: "pm_123",
-        customer_id: nil,
-        type: "card"
+        customer_id: "cus_123",
+        type: "card",
+        status: "DISABLED"
       }
     end
 
     before do
-      stub_request(:post, "#{BASE_URL}/api/v1/pa/payment_methods/pm_123/detach")
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/payment_methods/pm_123/disable")
         .to_return(
           status: 200,
-          body: detached_response.to_json,
+          body: disabled_response.to_json,
           headers: { "Content-Type" => "application/json" }
         )
     end
 
-    it "detaches payment method from customer" do
-      result = pm.detach
+    it "disables the payment method" do
+      result = pm.disable
 
       expect(result).to eq(pm)
-      expect(pm.customer_id).to be_nil
+      expect(pm.status).to eq("DISABLED")
     end
 
-    it "sends POST request to detach endpoint" do
-      pm.detach
+    it "sends POST request to the disable endpoint" do
+      pm.disable
 
-      expect(WebMock).to have_requested(:post, "#{BASE_URL}/api/v1/pa/payment_methods/pm_123/detach")
+      expect(WebMock).to have_requested(:post, "#{BASE_URL}/api/v1/pa/payment_methods/pm_123/disable")
     end
   end
 end

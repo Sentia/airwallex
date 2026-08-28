@@ -132,7 +132,17 @@ RSpec.describe Airwallex::Client do
       headers = client.connection.headers
       expect(headers["Content-Type"]).to eq("application/json")
       expect(headers["User-Agent"]).to match(/Airwallex-Ruby/)
-      expect(headers["x-api-version"]).to eq("2024-09-27")
+    end
+
+    it "does not send x-api-version by default" do
+      expect(client.connection.headers).not_to have_key("x-api-version")
+    end
+
+    it "sends x-api-version only when explicitly configured" do
+      config.api_version = "2026-08-21"
+      versioned_client = described_class.new(config)
+
+      expect(versioned_client.connection.headers["x-api-version"]).to eq("2026-08-21")
     end
   end
 

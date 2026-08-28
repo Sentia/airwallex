@@ -9,8 +9,8 @@ module Airwallex
 
       module ClassMethods
         def update(id, params = {}, opts = {})
-          response = Airwallex.client.put(
-            "#{resource_path}/#{id}",
+          response = Airwallex.client.post(
+            "#{resource_path}/#{id}/update",
             params,
             opts[:headers] || {}
           )
@@ -20,8 +20,8 @@ module Airwallex
 
       # Instance methods
       def update(params = {})
-        response = Airwallex.client.put(
-          "#{self.class.resource_path}/#{id}",
+        response = Airwallex.client.post(
+          "#{self.class.resource_path}/#{id}/update",
           params
         )
         refresh_from(response)

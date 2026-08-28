@@ -141,7 +141,7 @@ RSpec.describe Airwallex::PaymentIntent do
     end
 
     before do
-      stub_request(:put, "#{BASE_URL}/api/v1/pa/payment_intents/pi_123")
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/payment_intents/pi_123/update")
         .with(body: hash_including(update_params))
         .to_return(
           status: 200,
@@ -324,7 +324,7 @@ RSpec.describe Airwallex::PaymentIntent do
     end
 
     before do
-      stub_request(:put, "#{BASE_URL}/api/v1/pa/payment_intents/pi_123")
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/payment_intents/pi_123/update")
         .with(body: hash_including(update_params))
         .to_return(
           status: 200,
@@ -359,7 +359,7 @@ RSpec.describe Airwallex::PaymentIntent do
     end
 
     before do
-      stub_request(:put, "#{BASE_URL}/api/v1/pa/payment_intents/pi_123")
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/payment_intents/pi_123/update")
         .to_return(
           status: 200,
           body: updated_response.to_json,
@@ -377,7 +377,7 @@ RSpec.describe Airwallex::PaymentIntent do
     it "does nothing if not dirty" do
       intent.save
 
-      expect(WebMock).not_to have_requested(:put, /payment_intents/)
+      expect(WebMock).not_to have_requested(:post, %r{payment_intents/pi_123/update})
     end
   end
 end

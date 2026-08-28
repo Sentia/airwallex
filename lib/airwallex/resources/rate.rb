@@ -10,15 +10,10 @@ module Airwallex
   #   rate = Airwallex::Rate.retrieve(buy_currency: 'EUR', sell_currency: 'USD')
   #   puts "1 USD = #{rate.client_rate} EUR"
   #
-  # @example Get multiple rates (Note: API may not support multiple at once)
-  #   rate = Airwallex::Rate.retrieve(
-  #     buy_currency: 'EUR',
-  #     sell_currency: 'USD'
-  #   )
-  #
+  # There is no .list — /fx/rates/current always returns the rate for one
+  # specific currency pair, not a collection.
   class Rate < APIResource
     extend APIOperations::Retrieve
-    extend APIOperations::List
 
     def self.resource_path
       "/api/v1/fx/rates/current"

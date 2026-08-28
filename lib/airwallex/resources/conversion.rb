@@ -37,7 +37,7 @@ module Airwallex
     extend APIOperations::List
 
     def self.resource_path
-      "/api/v1/conversions"
+      "/api/v1/fx/conversions"
     end
   end
 end

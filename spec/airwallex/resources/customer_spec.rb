@@ -11,29 +11,31 @@ RSpec.describe Airwallex::Customer do
   end
 
   describe ".create" do
+    # merchant_customer_id is required.
     let(:create_params) do
       {
+        merchant_customer_id: "mc_789",
         email: "john@example.com",
         first_name: "John",
         last_name: "Doe",
-        metadata: { internal_id: "user_789" }
+        phone_number: "+1 1234567890"
       }
     end
 
     let(:customer_response) do
       {
         id: "cus_123",
+        merchant_customer_id: "mc_789",
         email: "john@example.com",
         first_name: "John",
         last_name: "Doe",
-        metadata: { internal_id: "user_789" },
         created_at: "2025-11-25T10:00:00Z"
       }
     end
 
     before do
       stub_request(:post, "#{BASE_URL}/api/v1/pa/customers/create")
-        .with(body: hash_including(email: "john@example.com"))
+        .with(body: hash_including(email: "john@example.com", merchant_customer_id: "mc_789"))
         .to_return(
           status: 200,
           body: customer_response.to_json,
@@ -48,7 +50,7 @@ RSpec.describe Airwallex::Customer do
       expect(customer.id).to eq("cus_123")
       expect(customer.email).to eq("john@example.com")
       expect(customer.first_name).to eq("John")
-      expect(customer.metadata[:internal_id]).to eq("user_789")
+      expect(customer.merchant_customer_id).to eq("mc_789")
     end
 
     it "sends POST request to correct endpoint" do
@@ -141,7 +143,7 @@ RSpec.describe Airwallex::Customer do
     end
 
     before do
-      stub_request(:put, "#{BASE_URL}/api/v1/pa/customers/cus_123")
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/customers/cus_123/update")
         .to_return(
           status: 200,
           body: updated_response.to_json,
@@ -176,7 +178,7 @@ RSpec.describe Airwallex::Customer do
     end
 
     before do
-      stub_request(:put, "#{BASE_URL}/api/v1/pa/customers/cus_123")
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/customers/cus_123/update")
         .to_return(
           status: 200,
           body: updated_response.to_json,
@@ -194,10 +196,10 @@ RSpec.describe Airwallex::Customer do
 
   describe ".delete" do
     before do
-      stub_request(:delete, "#{BASE_URL}/api/v1/pa/customers/cus_123")
+      stub_request(:post, "#{BASE_URL}/api/v1/pa/customers/cus_123/delete")
         .to_return(
           status: 200,
-          body: {}.to_json,
+          body: "true",
           headers: { "Content-Type" => "application/json" }
         )
     end
@@ -208,10 +210,10 @@ RSpec.describe Airwallex::Customer do
       expect(result).to be true
     end
 
-    it "sends DELETE request" do
+    it "sends POST request to the delete endpoint" do
       described_class.delete("cus_123")
 
-      expect(WebMock).to have_requested(:delete, "#{BASE_URL}/api/v1/pa/customers/cus_123")
+      expect(WebMock).to have_requested(:post, "#{BASE_URL}/api/v1/pa/customers/cus_123/delete")
     end
   end
 

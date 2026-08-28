@@ -3,14 +3,16 @@
 module Airwallex
   # Quote resource for locked exchange rates
   #
-  # Create quotes to lock exchange rates for a short period (typically 30-60 seconds).
-  # Use quotes to guarantee the rate when executing conversions.
+  # Create quotes to lock exchange rates for a period you choose (validity:
+  # MIN_1 through HR_24 — see .create). Use quotes to guarantee the rate when
+  # executing conversions.
   #
   # @example Create a quote
   #   quote = Airwallex::Quote.create(
   #     buy_currency: 'EUR',
   #     sell_currency: 'USD',
-  #     sell_amount: 1000.00
+  #     sell_amount: 1000.00,
+  #     validity: "MIN_1"
   #   )
   #   puts "Locked rate: #{quote.client_rate}, expires: #{quote.expires_at}"
   #

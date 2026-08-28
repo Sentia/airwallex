@@ -6,7 +6,7 @@ RSpec.describe Airwallex::Conversion do
 
   describe ".create" do
     it "creates conversion with quote_id" do
-      stub_request(:post, "#{BASE_URL}/api/v1/conversions/create")
+      stub_request(:post, "#{BASE_URL}/api/v1/fx/conversions/create")
         .with(body: hash_including(
           quote_id: "quote_123456",
           request_id: "conv_req_001"
@@ -46,7 +46,7 @@ RSpec.describe Airwallex::Conversion do
     end
 
     it "creates conversion at market rate without quote" do
-      stub_request(:post, "#{BASE_URL}/api/v1/conversions/create")
+      stub_request(:post, "#{BASE_URL}/api/v1/fx/conversions/create")
         .with(body: hash_including(
           from_currency: "GBP",
           to_currency: "JPY",
@@ -83,7 +83,7 @@ RSpec.describe Airwallex::Conversion do
     end
 
     it "creates conversion with buy_amount" do
-      stub_request(:post, "#{BASE_URL}/api/v1/conversions/create")
+      stub_request(:post, "#{BASE_URL}/api/v1/fx/conversions/create")
         .with(body: hash_including(
           from_currency: "USD",
           to_currency: "EUR",
@@ -119,7 +119,7 @@ RSpec.describe Airwallex::Conversion do
 
   describe ".retrieve" do
     it "retrieves existing conversion" do
-      stub_request(:get, "#{BASE_URL}/api/v1/conversions/conv_123456")
+      stub_request(:get, "#{BASE_URL}/api/v1/fx/conversions/conv_123456")
         .to_return(
           status: 200,
           body: {
@@ -146,7 +146,7 @@ RSpec.describe Airwallex::Conversion do
 
   describe ".list" do
     it "lists conversions" do
-      stub_request(:get, "#{BASE_URL}/api/v1/conversions")
+      stub_request(:get, "#{BASE_URL}/api/v1/fx/conversions")
         .to_return(
           status: 200,
           body: {
@@ -177,7 +177,7 @@ RSpec.describe Airwallex::Conversion do
     end
 
     it "filters by from_currency" do
-      stub_request(:get, "#{BASE_URL}/api/v1/conversions")
+      stub_request(:get, "#{BASE_URL}/api/v1/fx/conversions")
         .with(query: hash_including(from_currency: "USD"))
         .to_return(
           status: 200,
@@ -198,7 +198,7 @@ RSpec.describe Airwallex::Conversion do
 
   describe "error handling" do
     it "handles expired quote" do
-      stub_request(:post, "#{BASE_URL}/api/v1/conversions/create")
+      stub_request(:post, "#{BASE_URL}/api/v1/fx/conversions/create")
         .to_return(
           status: 400,
           body: {
@@ -217,7 +217,7 @@ RSpec.describe Airwallex::Conversion do
     end
 
     it "handles insufficient funds" do
-      stub_request(:post, "#{BASE_URL}/api/v1/conversions/create")
+      stub_request(:post, "#{BASE_URL}/api/v1/fx/conversions/create")
         .to_return(
           status: 400,
           body: {
@@ -238,7 +238,7 @@ RSpec.describe Airwallex::Conversion do
     end
 
     it "handles duplicate request_id" do
-      stub_request(:post, "#{BASE_URL}/api/v1/conversions/create")
+      stub_request(:post, "#{BASE_URL}/api/v1/fx/conversions/create")
         .to_return(
           status: 400,
           body: {
@@ -259,7 +259,7 @@ RSpec.describe Airwallex::Conversion do
     end
 
     it "handles conversion not found" do
-      stub_request(:get, "#{BASE_URL}/api/v1/conversions/nonexistent")
+      stub_request(:get, "#{BASE_URL}/api/v1/fx/conversions/nonexistent")
         .to_return(
           status: 404,
           body: {
