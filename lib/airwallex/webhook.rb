@@ -62,7 +62,8 @@ module Airwallex
 
       def initialize(attributes = {})
         @id = attributes["id"]
-        @type = attributes["type"]
+        # Airwallex webhook payloads carry the event type under "name", not "type".
+        @type = attributes["name"]
         @data = attributes["data"]
         @created_at = attributes["created_at"]
       end
