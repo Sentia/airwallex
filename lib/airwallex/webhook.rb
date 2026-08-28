@@ -5,6 +5,8 @@ require "openssl"
 module Airwallex
   module Webhook
     DEFAULT_TOLERANCE = 300 # 5 minutes
+    # Timestamps below this are seconds, at/above are milliseconds. Valid until year 2286.
+    MS_THRESHOLD = 10_000_000_000
 
     module_function
 
@@ -37,6 +39,8 @@ module Airwallex
     def verify_timestamp(timestamp, tolerance)
       current_time = Time.now.to_i
       timestamp_int = timestamp.to_i
+      # Airwallex sends x-timestamp in milliseconds; normalize to seconds before comparing.
+      timestamp_int /= 1000 if timestamp_int > MS_THRESHOLD
 
       if (current_time - timestamp_int).abs > tolerance
         raise SignatureVerificationError, "Timestamp outside tolerance (#{tolerance}s)"
