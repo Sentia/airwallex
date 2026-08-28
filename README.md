@@ -319,8 +319,8 @@ begin
     timestamp,
     tolerance: 300 # 5 minutes
   )
-  
-  case event.type
+
+  case event.name
   when 'payment_intent.succeeded'
     handle_successful_payment(event.data)
   when 'payout.transfer.failed'

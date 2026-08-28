@@ -2,7 +2,7 @@
 
 RSpec.describe Airwallex::Webhook do
   let(:secret) { "test_secret" }
-  let(:payload) { '{"id":"evt_123","type":"payment_intent.succeeded","data":{}}' }
+  let(:payload) { '{"id":"evt_123","name":"payment_intent.succeeded","data":{}}' }
   let(:timestamp) { Time.now.to_i.to_s }
   let(:signature) { described_class.send(:compute_signature, timestamp, payload, secret) }
 
@@ -82,7 +82,7 @@ RSpec.describe Airwallex::Webhook do
     let(:event_data) do
       {
         "id" => "evt_123",
-        "type" => "payment_intent.succeeded",
+        "name" => "payment_intent.succeeded",
         "data" => { "amount" => 100 },
         "created_at" => "2025-11-25T10:00:00Z"
       }
@@ -94,8 +94,8 @@ RSpec.describe Airwallex::Webhook do
       expect(event.id).to eq("evt_123")
     end
 
-    it "has type" do
-      expect(event.type).to eq("payment_intent.succeeded")
+    it "has name" do
+      expect(event.name).to eq("payment_intent.succeeded")
     end
 
     it "has data" do

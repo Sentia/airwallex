@@ -58,11 +58,11 @@ module Airwallex
     private_class_method :compute_signature, :verify_timestamp, :secure_compare
 
     class Event
-      attr_reader :id, :type, :data, :created_at
+      attr_reader :id, :name, :data, :created_at
 
       def initialize(attributes = {})
         @id = attributes["id"]
-        @type = attributes["type"]
+        @name = attributes["name"]
         @data = attributes["data"]
         @created_at = attributes["created_at"]
       end
