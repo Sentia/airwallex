@@ -10,12 +10,16 @@ module Airwallex
     SANDBOX_FILES_URL = "https://files-demo.airwallex.com"
     PRODUCTION_FILES_URL = "https://files.airwallex.com"
 
-    DEFAULT_API_VERSION = "2024-09-27"
     VALID_ENVIRONMENTS = %i[sandbox production].freeze
 
+    # api_version is nil by default. Airwallex stores a version on your
+    # account and applies it automatically; the x-api-version header is only
+    # for exceptional per-call overrides (testing/migrating), not a
+    # permanent pin — see https://www.airwallex.com/docs/api/versioning.
+    # Set this explicitly if you want reproducible, pinned behavior instead.
     def initialize
       @environment = :sandbox
-      @api_version = DEFAULT_API_VERSION
+      @api_version = nil
       @log_level = :info
     end
 

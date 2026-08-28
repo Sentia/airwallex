@@ -1,5 +1,62 @@
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-28
+
+### Added
+- GlobalAccount resource (create, retrieve, list, update, `#close`, `#generate_statement_letter`,
+  `#transactions`)
+  - GlobalAccountAlias nested resource (`#create_alias`, `#alias`, `#aliases`, `#initiate_port`,
+    `#submit_verification_code`, `#request_new_verification_code`, `#cancel`)
+  - GlobalAccountMandate nested resource (`#mandate`, `#mandates`, `#cancel`)
+- Billing resources: BillingCustomer, BillingProduct, BillingPrice, BillingSubscription (with `#items`/`#item`)
+- PaymentConsent resource (create, retrieve, list, update, `#verify`, `#verify_continue`, `#disable`)
+- PaymentSource resource (create, retrieve, list)
+- ConnectedAccount resource (create, retrieve, list, update, `#submit`, `#agree_to_terms_and_conditions`,
+  `#suspend`, `#reactivate`, `.current`, `.wallet_info`, `#legal_entity_id`)
+- AccountAmendment resource (create, retrieve)
+- FundsSplit resource (create, retrieve, list, `#release`)
+- Charge resource (create, retrieve, list)
+- Beneficiary gained `.update`/`#update`, `.validate`, `.verify_account`, `.api_schema`, `.form_schema`, and
+  `.supported_financial_institutions`
+- Dispute gained `.update`, `#challenge` (replacing `#submit_evidence`), and `#related_payment_intents`
+- PaymentMethod gained `#disable`
+- New tests covering all of the above (378 total)
+
+### Fixed
+- `APIOperations::Update` now sends `POST #{resource_path}/{id}/update` instead of `PUT #{resource_path}/{id}`
+- `APIOperations::Delete` now sends `POST #{resource_path}/{id}/delete` instead of `DELETE #{resource_path}/{id}`,
+  and checks the response instead of always returning `true`
+- `Dispute`'s resource path corrected from `/api/v1/disputes` to `/api/v1/pa/payment_disputes`
+- `Conversion`'s resource path corrected from `/api/v1/conversions` to `/api/v1/fx/conversions`
+- `Configuration#api_version` now defaults to `nil` instead of a hardcoded date, and `x-api-version` is only
+  sent when explicitly set
+- `Beneficiary.create`/`.validate`/`.update` payloads corrected: wrapped under a top-level `beneficiary` key,
+  with `nickname`/`payer_entity_type`/`transfer_methods`/`transfer_reason` as top-level siblings;
+  `entity_type` replaces the nonexistent `beneficiary_type`
+- `Beneficiary#update`/`.update` requires the full payload, not a partial patch
+- `Beneficiary.supported_financial_institutions` requires `account_currency`, `entity_type`,
+  `transfer_method`, and `keyword` in addition to `bank_country_code`
+- `Customer.create` requires `merchant_customer_id`
+- `GlobalAccount#generate_statement_letter` requires `account_statement_type` and `registration_info`
+- `ConnectedAccount.create` payload corrected: `account_details` is a required top-level wrapper;
+  `legal_entity_type` is `"BUSINESS"`/`"INDIVIDUAL"`, not `"COMPANY"`
+- `BillingCustomer.create` payload corrected to match the real flat schema (`name`/`email`/`type`/
+  `default_billing_currency`/`address`/`default_legal_entity_id`)
+- `BillingPrice.create` requires `pricing_model` and `recurring`
+- `BillingSubscription.create` payload corrected: prices attach via an `items:` array, not a flat
+  `price_id`; `starts_at` replaces `start_date`; added `legal_entity_id` and `payment_source_id`
+- `AccountAmendment.create` payload corrected to use `target` plus the changed section as a top-level
+  sibling, not a generic `changes:` wrapper
+- `PaymentSource.create`'s `external_id` corrected to reference a `PaymentMethod` id, not a `PaymentConsent` id
+- `ConnectedAccount#legal_entity_id` added as the source for `BillingCustomer`/`BillingSubscription`'s
+  `legal_entity_id`, rather than a separate resource
+- `Rate`/`Quote` use `sell_currency`/`buy_currency`, not `from_currency`/`to_currency`
+- `Quote.create` requires `validity` (`MIN_1`, `MIN_15`, `MIN_30`, `HR_1`, `HR_4`, `HR_8`, or `HR_24`)
+
+### Removed
+- `Rate.list` — the endpoint has no "list all rates" concept, only `.retrieve(sell_currency:, buy_currency:)`
+- `PaymentMethod.delete` and `PaymentMethod#detach` — replaced by `#disable`, the real lifecycle operation
+
 ## [0.6.0] - 2026-08-28
 
 ### Fixed

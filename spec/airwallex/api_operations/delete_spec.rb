@@ -19,10 +19,10 @@ RSpec.describe Airwallex::APIOperations::Delete do
 
   describe ".delete" do
     before do
-      stub_request(:delete, "#{BASE_URL}/api/v1/test_resources/test_123")
+      stub_request(:post, "#{BASE_URL}/api/v1/test_resources/test_123/delete")
         .to_return(
           status: 200,
-          body: {}.to_json,
+          body: "true",
           headers: { "Content-Type" => "application/json" }
         )
     end
@@ -33,10 +33,23 @@ RSpec.describe Airwallex::APIOperations::Delete do
       expect(result).to be true
     end
 
-    it "sends DELETE request" do
+    it "sends POST request to the delete endpoint" do
       TestResource.delete("test_123")
 
-      expect(WebMock).to have_requested(:delete, "#{BASE_URL}/api/v1/test_resources/test_123")
+      expect(WebMock).to have_requested(:post, "#{BASE_URL}/api/v1/test_resources/test_123/delete")
+    end
+
+    it "returns false when deletion did not take place" do
+      stub_request(:post, "#{BASE_URL}/api/v1/test_resources/test_456/delete")
+        .to_return(
+          status: 200,
+          body: "false",
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      result = TestResource.delete("test_456")
+
+      expect(result).to be false
     end
   end
 end

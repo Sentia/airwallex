@@ -7,11 +7,15 @@ module Airwallex
   # for individual users or accounts.
   #
   # @example Create a customer
+  #   # merchant_customer_id is required — your own reference id for this
+  #   # customer. request_id is optional (the gem's Idempotency middleware
+  #   # injects one automatically).
   #   customer = Airwallex::Customer.create(
+  #     merchant_customer_id: SecureRandom.uuid,
   #     email: "john@example.com",
   #     first_name: "John",
   #     last_name: "Doe",
-  #     metadata: { internal_id: "user_789" }
+  #     phone_number: "+1 1234567890"
   #   )
   #
   # @example List payment methods for a customer
@@ -20,7 +24,6 @@ module Airwallex
     extend APIOperations::Create
     extend APIOperations::Retrieve
     extend APIOperations::List
-    extend APIOperations::Update
     include APIOperations::Update
     extend APIOperations::Delete
 

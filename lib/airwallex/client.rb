@@ -25,7 +25,7 @@ module Airwallex
 
         conn.headers["Content-Type"] = "application/json"
         conn.headers["User-Agent"] = user_agent
-        conn.headers["x-api-version"] = config.api_version
+        conn.headers["x-api-version"] = config.api_version if config.api_version
 
         conn.adapter Faraday.default_adapter
       end

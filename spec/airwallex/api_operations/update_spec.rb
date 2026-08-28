@@ -35,7 +35,7 @@ RSpec.describe Airwallex::APIOperations::Update do
     end
 
     before do
-      stub_request(:put, "#{BASE_URL}/api/v1/test_resources/test_123")
+      stub_request(:post, "#{BASE_URL}/api/v1/test_resources/test_123/update")
         .with(body: hash_including(update_params))
         .to_return(
           status: 200,
@@ -53,10 +53,10 @@ RSpec.describe Airwallex::APIOperations::Update do
       expect(resource.value).to eq(200)
     end
 
-    it "sends PUT request with params" do
+    it "sends POST request with params" do
       TestResource.update("test_123", update_params)
 
-      expect(WebMock).to have_requested(:put, "#{BASE_URL}/api/v1/test_resources/test_123")
+      expect(WebMock).to have_requested(:post, "#{BASE_URL}/api/v1/test_resources/test_123/update")
         .with(body: hash_including(update_params))
     end
   end
@@ -79,7 +79,7 @@ RSpec.describe Airwallex::APIOperations::Update do
     end
 
     before do
-      stub_request(:put, "#{BASE_URL}/api/v1/test_resources/test_123")
+      stub_request(:post, "#{BASE_URL}/api/v1/test_resources/test_123/update")
         .to_return(
           status: 200,
           body: update_response.to_json,
@@ -120,7 +120,7 @@ RSpec.describe Airwallex::APIOperations::Update do
 
     context "when attributes changed" do
       before do
-        stub_request(:put, "#{BASE_URL}/api/v1/test_resources/test_123")
+        stub_request(:post, "#{BASE_URL}/api/v1/test_resources/test_123/update")
           .to_return(
             status: 200,
             body: update_response.to_json,
@@ -141,7 +141,7 @@ RSpec.describe Airwallex::APIOperations::Update do
         resource.name = "Updated Name"
         resource.save
 
-        expect(WebMock).to have_requested(:put, "#{BASE_URL}/api/v1/test_resources/test_123")
+        expect(WebMock).to have_requested(:post, "#{BASE_URL}/api/v1/test_resources/test_123/update")
           .with(body: hash_including(name: "Updated Name"))
       end
 
@@ -157,7 +157,7 @@ RSpec.describe Airwallex::APIOperations::Update do
       it "does not make API call" do
         resource.save
 
-        expect(WebMock).not_to have_requested(:put, /test_resources/)
+        expect(WebMock).not_to have_requested(:post, %r{test_resources/test_123/update})
       end
 
       it "returns self" do

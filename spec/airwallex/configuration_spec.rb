@@ -8,8 +8,11 @@ RSpec.describe Airwallex::Configuration do
       expect(config.environment).to eq(:sandbox)
     end
 
-    it "sets default API version" do
-      expect(config.api_version).to eq("2024-09-27")
+    it "does not pin an API version by default" do
+      # Airwallex applies whichever version is configured on the account;
+      # the gem should not silently override that. See
+      # https://www.airwallex.com/docs/api/versioning
+      expect(config.api_version).to be_nil
     end
 
     it "sets default log level" do

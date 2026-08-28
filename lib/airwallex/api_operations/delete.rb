@@ -4,12 +4,12 @@ module Airwallex
   module APIOperations
     module Delete
       def delete(id, opts = {})
-        Airwallex.client.delete(
-          "#{resource_path}/#{id}",
+        response = Airwallex.client.post(
+          "#{resource_path}/#{id}/delete",
           {},
           opts[:headers] || {}
         )
-        true
+        response == true
       end
     end
   end

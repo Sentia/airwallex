@@ -4,20 +4,25 @@ require "spec_helper"
 
 RSpec.describe Airwallex::Quote do
 
+  # sell_currency is what you're giving up, buy_currency is what you're
+  # acquiring — "from USD to EUR" means sell_currency: USD, buy_currency: EUR.
+  # validity: is a required string enum (not seconds): MIN_1, MIN_15,
+  # MIN_30, HR_1, HR_4, HR_8, HR_24.
   describe ".create" do
     it "creates quote with sell_amount" do
       stub_request(:post, "#{BASE_URL}/api/v1/fx/quotes/create")
         .with(body: hash_including(
-          from_currency: "USD",
-          to_currency: "EUR",
-          sell_amount: 1000.00
+          sell_currency: "USD",
+          buy_currency: "EUR",
+          sell_amount: 1000.00,
+          validity: "MIN_1"
         ))
         .to_return(
           status: 200,
           body: {
             id: "quote_123456",
-            from_currency: "USD",
-            to_currency: "EUR",
+            sell_currency: "USD",
+            buy_currency: "EUR",
             sell_amount: 1000.00,
             buy_amount: 850.00,
             exchange_rate: 0.85,
@@ -28,15 +33,16 @@ RSpec.describe Airwallex::Quote do
         )
 
       quote = described_class.create(
-        from_currency: "USD",
-        to_currency: "EUR",
-        sell_amount: 1000.00
+        sell_currency: "USD",
+        buy_currency: "EUR",
+        sell_amount: 1000.00,
+        validity: "MIN_1"
       )
 
       expect(quote).to be_a(Airwallex::Quote)
       expect(quote.id).to eq("quote_123456")
-      expect(quote.from_currency).to eq("USD")
-      expect(quote.to_currency).to eq("EUR")
+      expect(quote.sell_currency).to eq("USD")
+      expect(quote.buy_currency).to eq("EUR")
       expect(quote.sell_amount).to eq(1000.00)
       expect(quote.buy_amount).to eq(850.00)
       expect(quote.exchange_rate).to eq(0.85)
@@ -45,16 +51,17 @@ RSpec.describe Airwallex::Quote do
     it "creates quote with buy_amount" do
       stub_request(:post, "#{BASE_URL}/api/v1/fx/quotes/create")
         .with(body: hash_including(
-          from_currency: "GBP",
-          to_currency: "JPY",
-          buy_amount: 100000.00
+          sell_currency: "GBP",
+          buy_currency: "JPY",
+          buy_amount: 100000.00,
+          validity: "MIN_1"
         ))
         .to_return(
           status: 200,
           body: {
             id: "quote_789012",
-            from_currency: "GBP",
-            to_currency: "JPY",
+            sell_currency: "GBP",
+            buy_currency: "JPY",
             sell_amount: 530.50,
             buy_amount: 100000.00,
             exchange_rate: 188.50,
@@ -65,9 +72,10 @@ RSpec.describe Airwallex::Quote do
         )
 
       quote = described_class.create(
-        from_currency: "GBP",
-        to_currency: "JPY",
-        buy_amount: 100000.00
+        sell_currency: "GBP",
+        buy_currency: "JPY",
+        buy_amount: 100000.00,
+        validity: "MIN_1"
       )
 
       expect(quote.id).to eq("quote_789012")
@@ -83,8 +91,8 @@ RSpec.describe Airwallex::Quote do
           status: 200,
           body: {
             id: "quote_123456",
-            from_currency: "USD",
-            to_currency: "EUR",
+            sell_currency: "USD",
+            buy_currency: "EUR",
             sell_amount: 1000.00,
             buy_amount: 850.00,
             exchange_rate: 0.85,
@@ -97,7 +105,7 @@ RSpec.describe Airwallex::Quote do
       quote = described_class.retrieve("quote_123456")
 
       expect(quote.id).to eq("quote_123456")
-      expect(quote.from_currency).to eq("USD")
+      expect(quote.sell_currency).to eq("USD")
       expect(quote.exchange_rate).to eq(0.85)
     end
   end
@@ -171,8 +179,8 @@ RSpec.describe Airwallex::Quote do
 
       expect do
         described_class.create(
-          from_currency: "USD",
-          to_currency: "EUR",
+          sell_currency: "USD",
+          buy_currency: "EUR",
           sell_amount: 1000.00
         )
       end.to raise_error(Airwallex::BadRequestError, /expired/)
@@ -191,8 +199,8 @@ RSpec.describe Airwallex::Quote do
 
       expect do
         described_class.create(
-          from_currency: "USD",
-          to_currency: "EUR"
+          sell_currency: "USD",
+          buy_currency: "EUR"
         )
       end.to raise_error(Airwallex::BadRequestError, /must be provided/)
     end
