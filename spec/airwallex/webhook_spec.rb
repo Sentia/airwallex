@@ -27,6 +27,23 @@ RSpec.describe Airwallex::Webhook do
       end.to raise_error(Airwallex::SignatureVerificationError, /Timestamp outside tolerance/)
     end
 
+    it "accepts a millisecond-precision timestamp within tolerance" do
+      ms_timestamp = (Time.now.to_f * 1000).to_i.to_s
+      ms_signature = described_class.send(:compute_signature, ms_timestamp, payload, secret)
+
+      event = described_class.construct_event(payload, ms_signature, ms_timestamp, secret: secret)
+      expect(event).to be_a(Airwallex::Webhook::Event)
+    end
+
+    it "raises error with an old millisecond-precision timestamp" do
+      old_ms_timestamp = ((Time.now.to_i - 400) * 1000).to_s
+      old_ms_signature = described_class.send(:compute_signature, old_ms_timestamp, payload, secret)
+
+      expect do
+        described_class.construct_event(payload, old_ms_signature, old_ms_timestamp, secret: secret)
+      end.to raise_error(Airwallex::SignatureVerificationError, /Timestamp outside tolerance/)
+    end
+
     it "accepts custom tolerance" do
       old_timestamp = (Time.now.to_i - 400).to_s
       old_signature = described_class.send(:compute_signature, old_timestamp, payload, secret)
