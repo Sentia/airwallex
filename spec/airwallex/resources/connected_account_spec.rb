@@ -234,10 +234,11 @@ RSpec.describe Airwallex::ConnectedAccount do
         )
     end
 
-    it "retrieves wallet info for the current account" do
+    it "retrieves wallet info for the current account, symbolized down through the balances array" do
       result = described_class.wallet_info
 
-      expect(result["balances"]).not_to be_empty
+      expect(result[:balances]).not_to be_empty
+      expect(result[:balances].first[:currency]).to eq("AUD")
     end
   end
 end

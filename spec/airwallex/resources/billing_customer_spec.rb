@@ -129,7 +129,7 @@ RSpec.describe Airwallex::BillingCustomer do
     it "retrieves bank transfer instructions for funding subscriptions" do
       instructions = customer.bank_transfer_instructions
 
-      expect(instructions["reference"]).to eq("BCUS123")
+      expect(instructions[:reference]).to eq("BCUS123")
     end
   end
 end

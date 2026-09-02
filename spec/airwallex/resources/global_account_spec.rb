@@ -177,7 +177,7 @@ RSpec.describe Airwallex::GlobalAccount do
     it "returns the generated statement letter" do
       result = account.generate_statement_letter(letter_params)
 
-      expect(result["document_url"]).to eq("https://files.airwallex.com/statement_letter.pdf")
+      expect(result[:document_url]).to eq("https://files.airwallex.com/statement_letter.pdf")
     end
   end
 

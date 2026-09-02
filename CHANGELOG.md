@@ -1,5 +1,27 @@
 ## [Unreleased]
 
+## [0.8.0] - 2026-09-02
+
+### Fixed
+- `Util.deep_symbolize_keys` now recurses into `Array`s, matching `ActiveSupport#deep_transform_keys`'s
+  behavior. Previously any `Array` value was copied through untouched, so hashes nested inside an array
+  (e.g. `beneficiary_form_schemas`'s `fields` list) kept string keys even after "deep" symbolizing.
+- `Beneficiary.validate`, `.verify_account`, `.api_schema`, `.form_schema`, and
+  `.supported_financial_institutions`, `ConnectedAccount.wallet_info`, `BillingCustomer#bank_transfer_instructions`,
+  and `GlobalAccount#generate_statement_letter` now return `Util.deep_symbolize_keys`-processed responses.
+  Previously these methods (unlike `.create`/`.retrieve`/`.update`/`.delete`/`.list`, which already
+  funnel through `APIResource`'s symbolization) returned the raw parsed JSON response with string keys,
+  with nothing in the method signature or naming to distinguish them from the symbolized methods on the
+  same class.
+
+  **Breaking change:** any code reading these eight methods' return values with string keys
+  (`response["field"]`) must switch to symbol keys (`response[:field]`).
+
+### Follow-up (not included in this release)
+- `Airwallex::Error#details`/`#param` are still populated from the raw, unsymbolized error body and are
+  intentionally out of scope here — a downstream consumer reads `#details` with string keys today, so
+  changing this needs a coordinated PR on that side first.
+
 ## [0.7.0] - 2026-08-28
 
 ### Added

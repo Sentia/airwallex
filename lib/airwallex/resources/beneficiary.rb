@@ -64,36 +64,36 @@ module Airwallex
     # method) before attempting to create the beneficiary.
     #
     # @param params [Hash] the same shape of params you'd pass to .create
-    # @return [Hash] raw validation result
+    # @return [Hash] symbolized validation result
     def self.validate(params = {})
-      Airwallex.client.post("#{resource_path}/validate", params)
+      Util.deep_symbolize_keys(Airwallex.client.post("#{resource_path}/validate", params))
     end
 
     # Verify ownership of a beneficiary's bank account via Confirmation of
     # Payee (CoP) before creation.
     #
     # @param params [Hash] beneficiary bank account details to verify
-    # @return [Hash] raw verification result (status, account_name_match_result)
+    # @return [Hash] symbolized verification result (status, account_name_match_result)
     def self.verify_account(params = {})
-      Airwallex.client.post("#{resource_path}/verify_account", params)
+      Util.deep_symbolize_keys(Airwallex.client.post("#{resource_path}/verify_account", params))
     end
 
     # Retrieve the API schema (field validation rules) for beneficiary bank
     # details, keyed by beneficiary type / entity type / bank country.
     #
     # @param params [Hash] e.g. beneficiary_type:, bank_country_code:
-    # @return [Hash] raw schema response
+    # @return [Hash] symbolized schema response
     def self.api_schema(params = {})
-      Airwallex.client.post(API_SCHEMA_PATH, params)
+      Util.deep_symbolize_keys(Airwallex.client.post(API_SCHEMA_PATH, params))
     end
 
     # Retrieve the dynamic form schema used to render beneficiary bank-detail
     # forms in the UI, keyed by beneficiary type / entity type / bank country.
     #
     # @param params [Hash] e.g. beneficiary_type:, bank_country_code:
-    # @return [Hash] raw schema response
+    # @return [Hash] symbolized schema response
     def self.form_schema(params = {})
-      Airwallex.client.post(FORM_SCHEMA_PATH, params)
+      Util.deep_symbolize_keys(Airwallex.client.post(FORM_SCHEMA_PATH, params))
     end
 
     # Search financial institutions supported for a given country, currency,
@@ -102,9 +102,9 @@ module Airwallex
     # @param params [Hash] required: bank_country_code:, account_currency:,
     #   entity_type:, transfer_method:, keyword: (a bank-name search term,
     #   min 3 chars)
-    # @return [Hash] raw response listing supported institutions
+    # @return [Hash] symbolized response listing supported institutions
     def self.supported_financial_institutions(params = {})
-      Airwallex.client.get(SUPPORTED_FINANCIAL_INSTITUTIONS_PATH, params)
+      Util.deep_symbolize_keys(Airwallex.client.get(SUPPORTED_FINANCIAL_INSTITUTIONS_PATH, params))
     end
   end
 end

@@ -163,8 +163,8 @@ RSpec.describe Airwallex::BatchTransfer do
         )
 
       batch = described_class.retrieve("batch_mixed")
-      successful = batch.transfers.select { |t| t["status"] == "COMPLETED" }
-      failed = batch.transfers.select { |t| t["status"] == "FAILED" }
+      successful = batch.transfers.select { |t| t[:status] == "COMPLETED" }
+      failed = batch.transfers.select { |t| t[:status] == "FAILED" }
 
       expect(successful.size).to eq(1)
       expect(failed.size).to eq(1)

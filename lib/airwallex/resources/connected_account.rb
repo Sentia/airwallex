@@ -75,9 +75,9 @@ module Airwallex
     # authenticated as
     #
     # @param params [Hash] additional params
-    # @return [Hash] raw wallet info response
+    # @return [Hash] symbolized wallet info response
     def self.wallet_info(params = {})
-      Airwallex.client.get(WALLET_INFO_PATH, params)
+      Util.deep_symbolize_keys(Airwallex.client.get(WALLET_INFO_PATH, params))
     end
 
     # The legal_entity_id needed by BillingCustomer.create's
