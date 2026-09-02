@@ -47,9 +47,7 @@ module Airwallex
     #   registered_address: { address:, city:, state:, postcode:, country: } }
     # @return [Hash] symbolized response (the generated letter/document reference)
     def generate_statement_letter(params = {})
-      Util.deep_symbolize_keys(
-        Airwallex.client.post("#{self.class.resource_path}/#{id}/generate_statement_letter", params)
-      )
+      self.class.symbolized_post("#{self.class.resource_path}/#{id}/generate_statement_letter", params)
     end
 
     # List inbound transactions (deposits) received into this account

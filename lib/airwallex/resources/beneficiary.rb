@@ -66,7 +66,7 @@ module Airwallex
     # @param params [Hash] the same shape of params you'd pass to .create
     # @return [Hash] symbolized validation result
     def self.validate(params = {})
-      Util.deep_symbolize_keys(Airwallex.client.post("#{resource_path}/validate", params))
+      symbolized_post("#{resource_path}/validate", params)
     end
 
     # Verify ownership of a beneficiary's bank account via Confirmation of
@@ -75,7 +75,7 @@ module Airwallex
     # @param params [Hash] beneficiary bank account details to verify
     # @return [Hash] symbolized verification result (status, account_name_match_result)
     def self.verify_account(params = {})
-      Util.deep_symbolize_keys(Airwallex.client.post("#{resource_path}/verify_account", params))
+      symbolized_post("#{resource_path}/verify_account", params)
     end
 
     # Retrieve the API schema (field validation rules) for beneficiary bank
@@ -84,7 +84,7 @@ module Airwallex
     # @param params [Hash] e.g. beneficiary_type:, bank_country_code:
     # @return [Hash] symbolized schema response
     def self.api_schema(params = {})
-      Util.deep_symbolize_keys(Airwallex.client.post(API_SCHEMA_PATH, params))
+      symbolized_post(API_SCHEMA_PATH, params)
     end
 
     # Retrieve the dynamic form schema used to render beneficiary bank-detail
@@ -93,7 +93,7 @@ module Airwallex
     # @param params [Hash] e.g. beneficiary_type:, bank_country_code:
     # @return [Hash] symbolized schema response
     def self.form_schema(params = {})
-      Util.deep_symbolize_keys(Airwallex.client.post(FORM_SCHEMA_PATH, params))
+      symbolized_post(FORM_SCHEMA_PATH, params)
     end
 
     # Search financial institutions supported for a given country, currency,
@@ -104,7 +104,7 @@ module Airwallex
     #   min 3 chars)
     # @return [Hash] symbolized response listing supported institutions
     def self.supported_financial_institutions(params = {})
-      Util.deep_symbolize_keys(Airwallex.client.get(SUPPORTED_FINANCIAL_INSTITUTIONS_PATH, params))
+      symbolized_get(SUPPORTED_FINANCIAL_INSTITUTIONS_PATH, params)
     end
   end
 end

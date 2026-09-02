@@ -8,19 +8,16 @@
   (e.g. `beneficiary_form_schemas`'s `fields` list) kept string keys even after "deep" symbolizing.
 - `Beneficiary.validate`, `.verify_account`, `.api_schema`, `.form_schema`, and
   `.supported_financial_institutions`, `ConnectedAccount.wallet_info`, `BillingCustomer#bank_transfer_instructions`,
-  and `GlobalAccount#generate_statement_letter` now return `Util.deep_symbolize_keys`-processed responses.
-  Previously these methods (unlike `.create`/`.retrieve`/`.update`/`.delete`/`.list`, which already
-  funnel through `APIResource`'s symbolization) returned the raw parsed JSON response with string keys,
-  with nothing in the method signature or naming to distinguish them from the symbolized methods on the
-  same class.
+  and `GlobalAccount#generate_statement_letter` now return `Util.deep_symbolize_keys`-processed responses,
+  via two new shared helpers, `APIResource.symbolized_post`/`.symbolized_get`. Previously these methods
+  (unlike `.create`/`.retrieve`/`.update`/`.delete`/`.list`, which already funnel through `APIResource`'s
+  symbolization) returned the raw parsed JSON response with string keys, with nothing in the method
+  signature or naming to distinguish them from the symbolized methods on the same class.
+- `Airwallex::Error#details` is now symbolized too (via the same `Util.deep_symbolize_keys` fix), instead
+  of holding the raw, string-keyed error body.
 
-  **Breaking change:** any code reading these eight methods' return values with string keys
+  **Breaking change:** any code reading these nine methods'/`#details`' values with string keys
   (`response["field"]`) must switch to symbol keys (`response[:field]`).
-
-### Follow-up (not included in this release)
-- `Airwallex::Error#details`/`#param` are still populated from the raw, unsymbolized error body and are
-  intentionally out of scope here — a downstream consumer reads `#details` with string keys today, so
-  changing this needs a coordinated PR on that side first.
 
 ## [0.7.0] - 2026-08-28
 

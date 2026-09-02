@@ -2,13 +2,18 @@
 
 module Airwallex
   class Error < StandardError
+    # @return [String, nil] error code
+    # @return [String, nil] param the offending field path, from the response's `source`
+    # @return [Hash, Array, nil] details symbolized field-level error detail, e.g. from a
+    #   validation_failed response (was raw/string-keyed prior to 0.8.0)
+    # @return [Integer, nil] http_status
     attr_reader :code, :message, :param, :details, :http_status
 
     def initialize(message = nil, code: nil, param: nil, details: nil, http_status: nil)
       @code = code
       @message = message
       @param = param
-      @details = details
+      @details = Util.deep_symbolize_keys(details)
       @http_status = http_status
       super(message)
     end

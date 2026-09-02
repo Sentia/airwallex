@@ -42,9 +42,7 @@ module Airwallex
     #
     # @return [Hash] symbolized bank transfer instructions
     def bank_transfer_instructions
-      Util.deep_symbolize_keys(
-        Airwallex.client.get("#{self.class.resource_path}/#{id}/bank_transfer_instructions")
-      )
+      self.class.symbolized_get("#{self.class.resource_path}/#{id}/bank_transfer_instructions")
     end
   end
 end

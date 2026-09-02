@@ -212,6 +212,41 @@ RSpec.describe Airwallex::APIResource do
     end
   end
 
+  describe ".symbolized_post" do
+    before do
+      stub_request(:post, "#{BASE_URL}/api/v1/test_resources/action")
+        .to_return(
+          status: 200,
+          body: { status: "OK", fields: [{ "path" => "a.b", "required" => true }] }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+    end
+
+    it "returns a symbolized Hash, including hashes nested inside arrays" do
+      result = test_class.symbolized_post("/api/v1/test_resources/action", { foo: "bar" })
+
+      expect(result[:status]).to eq("OK")
+      expect(result[:fields].first[:path]).to eq("a.b")
+    end
+  end
+
+  describe ".symbolized_get" do
+    before do
+      stub_request(:get, "#{BASE_URL}/api/v1/test_resources/action")
+        .to_return(
+          status: 200,
+          body: { items: [{ "name" => "Example" }] }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+    end
+
+    it "returns a symbolized Hash, including hashes nested inside arrays" do
+      result = test_class.symbolized_get("/api/v1/test_resources/action")
+
+      expect(result[:items].first[:name]).to eq("Example")
+    end
+  end
+
   describe "#inspect" do
     it "includes class name and id" do
       resource = test_class.new(id: "test_123")
