@@ -77,10 +77,63 @@ RSpec.describe Airwallex::Util do
       expect(result).to eq({ outer: { inner: "value" } })
     end
 
-    it "handles arrays with hashes" do
-      hash = { "key" => "value" }
+    it "converts keys of hashes nested inside an array" do
+      hash = {
+        "key" => "value",
+        "fields" => [
+          { "path" => "beneficiary.bank_details.account_number", "required" => true },
+          { "path" => "beneficiary.bank_details.bank_name", "required" => false }
+        ]
+      }
+
       result = described_class.deep_symbolize_keys(hash)
-      expect(result).to eq({ key: "value" })
+
+      expect(result).to eq(
+        key: "value",
+        fields: [
+          { path: "beneficiary.bank_details.account_number", required: true },
+          { path: "beneficiary.bank_details.bank_name", required: false }
+        ]
+      )
+    end
+
+    it "recurses through arrays nested multiple levels deep" do
+      hash = {
+        "key" => "newRecipient",
+        "condition" => {},
+        "fields" => [
+          {
+            "path" => "beneficiary.bank_details.account_number",
+            "required" => true,
+            "enabled" => true,
+            "field" => {
+              "type" => "TEXT",
+              "label" => "Account number",
+              "example" => "12345678",
+              "rule" => { "pattern" => "^[0-9]{6,9}$" }
+            }
+          }
+        ]
+      }
+
+      result = described_class.deep_symbolize_keys(hash)
+
+      expect(result[:fields][0][:field][:rule]).to eq({ pattern: "^[0-9]{6,9}$" })
+      expect(result[:fields][0][:path]).to eq("beneficiary.bank_details.account_number")
+    end
+
+    it "recurses into hashes nested inside an array nested inside another array" do
+      hash = { "groups" => [[{ "a" => 1 }, { "b" => 2 }]] }
+
+      result = described_class.deep_symbolize_keys(hash)
+
+      expect(result).to eq(groups: [[{ a: 1 }, { b: 2 }]])
+    end
+
+    it "leaves non-hash, non-array values untouched" do
+      expect(described_class.deep_symbolize_keys("string")).to eq("string")
+      expect(described_class.deep_symbolize_keys(nil)).to be_nil
+      expect(described_class.deep_symbolize_keys(42)).to eq(42)
     end
   end
 

@@ -244,7 +244,7 @@ RSpec.describe Airwallex::Beneficiary do
     it "validates beneficiary details before creation" do
       result = described_class.validate(validate_params)
 
-      expect(result["valid"]).to be true
+      expect(result[:valid]).to be true
     end
   end
 
@@ -264,7 +264,15 @@ RSpec.describe Airwallex::Beneficiary do
         .with(body: hash_including(verify_params))
         .to_return(
           status: 200,
-          body: { status: "VERIFIED", account_name_match_result: "FULL_MATCH" }.to_json,
+          body: {
+            code: "VERIFIED",
+            message: "stubbed",
+            details: {
+              account_name_match_result: "PARTIAL_MATCH",
+              resolved_account_name: "J SMITH",
+              resolved_bank_name: "Commonwealth Bank of Australia"
+            }
+          }.to_json,
           headers: { "Content-Type" => "application/json" }
         )
     end
@@ -272,8 +280,9 @@ RSpec.describe Airwallex::Beneficiary do
     it "verifies beneficiary bank account ownership via CoP" do
       result = described_class.verify_account(verify_params)
 
-      expect(result["status"]).to eq("VERIFIED")
-      expect(result["account_name_match_result"]).to eq("FULL_MATCH")
+      expect(result[:code]).to eq("VERIFIED")
+      expect(result[:details][:account_name_match_result]).to eq("PARTIAL_MATCH")
+      expect(result[:details][:resolved_bank_name]).to eq("Commonwealth Bank of Australia")
     end
 
     it "sends POST request to the verify_account endpoint" do
@@ -297,7 +306,8 @@ RSpec.describe Airwallex::Beneficiary do
     it "retrieves the API validation schema" do
       schema = described_class.api_schema(beneficiary_type: "BUSINESS", bank_country_code: "AU")
 
-      expect(schema["fields"]).not_to be_empty
+      expect(schema[:fields]).not_to be_empty
+      expect(schema[:fields].first[:name]).to eq("account_number")
     end
   end
 
@@ -308,21 +318,35 @@ RSpec.describe Airwallex::Beneficiary do
         .to_return(
           status: 200,
           body: {
-            beneficiary_type: "BUSINESS",
+            key: "newRecipient",
+            condition: {},
             fields: [
-              { name: "account_number", required: true },
-              { name: "bank_routing_value1", required: true }
+              {
+                path: "beneficiary.bank_details.account_number",
+                required: true,
+                enabled: true,
+                field: {
+                  type: "TEXT",
+                  label: "Account number",
+                  example: "12345678",
+                  rule: { pattern: "^[0-9]{6,9}$" }
+                }
+              }
             ]
           }.to_json,
           headers: { "Content-Type" => "application/json" }
         )
     end
 
-    it "retrieves the dynamic form schema" do
+    it "retrieves the dynamic form schema, symbolized down through the nested fields array" do
       schema = described_class.form_schema(beneficiary_type: "BUSINESS", bank_country_code: "AU")
 
-      expect(schema["beneficiary_type"]).to eq("BUSINESS")
-      expect(schema["fields"]).not_to be_empty
+      expect(schema[:key]).to eq("newRecipient")
+      expect(schema[:fields]).not_to be_empty
+
+      field = schema[:fields].first
+      expect(field[:path]).to eq("beneficiary.bank_details.account_number")
+      expect(field[:field][:rule][:pattern]).to eq("^[0-9]{6,9}$")
     end
   end
 
@@ -352,7 +376,8 @@ RSpec.describe Airwallex::Beneficiary do
     it "lists supported financial institutions" do
       result = described_class.supported_financial_institutions(query_params)
 
-      expect(result["items"]).not_to be_empty
+      expect(result[:items]).not_to be_empty
+      expect(result[:items].first[:name]).to eq("Commonwealth Bank")
     end
   end
 end

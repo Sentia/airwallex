@@ -40,9 +40,9 @@ module Airwallex
     # Retrieve the bank transfer instructions for funding this customer's
     # subscriptions (e.g. for a BT-funded instalment plan).
     #
-    # @return [Hash] raw bank transfer instructions
+    # @return [Hash] symbolized bank transfer instructions
     def bank_transfer_instructions
-      Airwallex.client.get("#{self.class.resource_path}/#{id}/bank_transfer_instructions")
+      self.class.symbolized_get("#{self.class.resource_path}/#{id}/bank_transfer_instructions")
     end
   end
 end

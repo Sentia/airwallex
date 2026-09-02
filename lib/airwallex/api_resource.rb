@@ -24,6 +24,28 @@ module Airwallex
       raise NotImplementedError, "#{self} must implement .resource_path"
     end
 
+    # Perform a one-off POST that returns a plain, symbolized Hash rather
+    # than an APIResource — for actions with no id/refresh lifecycle of
+    # their own (e.g. Beneficiary.verify_account, a bank-detail check that
+    # never becomes a resource).
+    #
+    # @param path [String] the request path
+    # @param params [Hash] request body
+    # @return [Hash] symbolized response
+    def self.symbolized_post(path, params = {})
+      Util.deep_symbolize_keys(Airwallex.client.post(path, params))
+    end
+
+    # Perform a one-off GET that returns a plain, symbolized Hash rather
+    # than an APIResource. See .symbolized_post.
+    #
+    # @param path [String] the request path
+    # @param params [Hash] query params
+    # @return [Hash] symbolized response
+    def self.symbolized_get(path, params = {})
+      Util.deep_symbolize_keys(Airwallex.client.get(path, params))
+    end
+
     # Dynamic attribute accessors
     def method_missing(method_name, *args, &)
       method_str = method_name.to_s

@@ -45,9 +45,9 @@ module Airwallex
     # @param params [Hash] account_statement_type: (e.g. "AMAZON"),
     #   registration_info: { agreement:, registered_name:, registered_email:,
     #   registered_address: { address:, city:, state:, postcode:, country: } }
-    # @return [Hash] raw response (the generated letter/document reference)
+    # @return [Hash] symbolized response (the generated letter/document reference)
     def generate_statement_letter(params = {})
-      Airwallex.client.post("#{self.class.resource_path}/#{id}/generate_statement_letter", params)
+      self.class.symbolized_post("#{self.class.resource_path}/#{id}/generate_statement_letter", params)
     end
 
     # List inbound transactions (deposits) received into this account

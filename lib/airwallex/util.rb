@@ -40,11 +40,14 @@ module Airwallex
       hash.transform_keys(&:to_sym)
     end
 
-    def deep_symbolize_keys(hash)
-      return hash unless hash.is_a?(Hash)
-
-      hash.each_with_object({}) do |(key, value), result|
-        result[key.to_sym] = value.is_a?(Hash) ? deep_symbolize_keys(value) : value
+    def deep_symbolize_keys(value)
+      case value
+      when Hash
+        value.each_with_object({}) { |(k, v), result| result[k.to_sym] = deep_symbolize_keys(v) }
+      when Array
+        value.map { |v| deep_symbolize_keys(v) }
+      else
+        value
       end
     end
 

@@ -94,10 +94,10 @@ RSpec.describe Airwallex::Error do
         }'
       end
 
-      it "parses details array" do
+      it "parses details array, symbolized down through the array elements" do
         error = described_class.from_response(response)
         expect(error.details).to be_an(Array)
-        expect(error.details.first["field"]).to eq("request_id")
+        expect(error.details.first[:field]).to eq("request_id")
       end
     end
 
@@ -152,8 +152,14 @@ RSpec.describe Airwallex::Error do
       expect(error.message).to eq("Test message")
       expect(error.code).to eq("test_code")
       expect(error.param).to eq("test_param")
-      expect(error.details).to eq([{ "test" => "detail" }])
+      expect(error.details).to eq([{ test: "detail" }])
       expect(error.http_status).to eq(400)
+    end
+
+    it "symbolizes details regardless of construction path" do
+      error = described_class.new("Test message", details: { "field" => "amount", "issue" => "required" })
+
+      expect(error.details).to eq({ field: "amount", issue: "required" })
     end
   end
 end
