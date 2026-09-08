@@ -426,26 +426,73 @@ https://www.airwallex.com/docs/api/simulation/ for the full reference. All
 of these raise `Airwallex::Error` (same as any other endpoint) if called
 against a production API key.
 
+#### Deposits
+
 ```ruby
-# Simulate an inbound bank transfer landing in a Global Account (settles on
-# its own within a few seconds, same as a real bank transfer)
+# Simulate an inbound bank transfer landing in a Global Account — auto-settles
+# on its own within a few seconds, same as a real bank transfer
 Airwallex::Deposit.simulate_create(amount: 100.00, global_account_id: 'gacc_123')
 
 # .simulate_settle/.simulate_reject/.simulate_reverse are for Direct Debit
 # deposits specifically, made via the real (non-simulation) .create — a real
 # direct debit pull takes days to clear, so the sandbox needs a way to force it
-deposit = Airwallex::Deposit.create(funding_source_id: 'la_123', amount: 50.00, currency: 'AUD')
-deposit.simulate_settle
+pending = Airwallex::Deposit.create(funding_source_id: 'la_123', amount: 50.00, currency: 'AUD')
+pending.simulate_settle # -> SETTLED
+# or: pending.simulate_reject -> REJECTED
 
-# Simulate a card authorization, then capture part of it
+# Reversing only works on an already-SETTLED Direct Debit deposit; it creates
+# an offsetting settled deposit and deactivates the LinkedAccount
+settled = Airwallex::Deposit.create(funding_source_id: 'la_123', amount: 50.00, currency: 'AUD')
+settled.simulate_settle
+settled.simulate_reverse
+
+# Class-level equivalents take a deposit_id directly instead of an instance
+Airwallex::Deposit.simulate_settle('dpt_123')
+Airwallex::Deposit.simulate_reject('dpt_123')
+Airwallex::Deposit.simulate_reverse('dpt_123')
+```
+
+#### Issuing Transactions
+
+```ruby
+# Authorize, then capture in full
 txn = Airwallex::IssuingTransaction.simulate_create(
   card_id: 'card_123',
   transaction_amount: 25.00,
   transaction_currency: 'USD'
 )
+Airwallex::IssuingTransaction.simulate_capture(txn.transaction_id)
+
+# Authorize, then capture only part of the authorized amount
+txn = Airwallex::IssuingTransaction.simulate_create(
+  card_id: 'card_123', transaction_amount: 25.00, transaction_currency: 'USD'
+)
 Airwallex::IssuingTransaction.simulate_capture(txn.transaction_id, transaction_amount: 10.00)
 
-# Simulate a full dispute lifecycle: raised, challenged, then resolved
+# Authorize and clear in a single step (no separate capture needed)
+Airwallex::IssuingTransaction.simulate_create(
+  card_id: 'card_123', transaction_amount: 25.00, transaction_currency: 'USD', single_phase: true
+)
+
+# Reverse a still-PENDING (uncaptured) authorization instead of capturing it
+txn = Airwallex::IssuingTransaction.simulate_create(
+  card_id: 'card_123', transaction_amount: 25.00, transaction_currency: 'USD'
+)
+Airwallex::IssuingTransaction.simulate_reverse(txn.transaction_id)
+
+# Refund a CAPTURED transaction back to the card
+Airwallex::IssuingTransaction.simulate_refund(
+  card_id: 'card_123', transaction_amount: 25.00, transaction_currency: 'USD'
+)
+
+# Simulate a 3DS delegation-mode notification for a card
+Airwallex::IssuingTransaction.simulate_notify_three_ds(card_number: '4111111111111111')
+```
+
+#### Disputes
+
+```ruby
+# Full lifecycle: raised, challenged, then resolved in the merchant's favor
 dispute = Airwallex::Dispute.simulate_create(
   payment_intent_id: payment_intent.id,
   reason_code: '4853',
@@ -455,20 +502,143 @@ dispute = Airwallex::Dispute.simulate_create(
 dispute.challenge(customer_communication: 'Proof of delivery')
 dispute.simulate_resolve(in_favor_of: 'MERCHANT')
 
-# Simulate a transfer's status advancing one step at a time
+# Or accept without challenging, then resolve in the customer's favor
+dispute = Airwallex::Dispute.simulate_create(
+  payment_intent_id: payment_intent.id, reason_code: '4853', stage: 'CHARGEBACK',
+  due_at: (Time.now + 86_400).iso8601
+)
+dispute.accept
+dispute.simulate_resolve(in_favor_of: 'CUSTOMER')
+
+# Escalate — the issuing bank rejects the challenge evidence and advances the
+# dispute to the next stage (e.g. Chargeback -> Pre-arbitration)
+dispute.challenge(customer_communication: 'Proof of delivery')
+dispute.simulate_escalate(due_at: (Time.now + 86_400).iso8601)
+
+# Class-level equivalents take a dispute_id directly instead of an instance
+Airwallex::Dispute.simulate_escalate('dis_123', due_at: (Time.now + 86_400).iso8601)
+Airwallex::Dispute.simulate_resolve('dis_123', in_favor_of: 'MERCHANT')
+```
+
+#### Transfers
+
+```ruby
+# Advance a transfer's status one step at a time: SCHEDULED -> PROCESSING ->
+# SENT -> PAID
 transfer.simulate_transition(next_status: 'PROCESSING')
 transfer.simulate_transition(next_status: 'SENT')
 transfer.simulate_transition(next_status: 'PAID')
 
-# Simulate a Direct Debit mandate being approved by the customer's bank
-Airwallex::LinkedAccount.simulate_accept_mandate('la_123')
+# OVERDUE, FAILED, and CANCELLED can be jumped to directly
+transfer.simulate_transition(next_status: 'FAILED', failure_type: 'INSUFFICIENT_FUNDS')
 
-# Simulate the shopper completing a 3DS/redirect challenge from #confirm
-payment_intent.simulate_shopper_pay(url: next_action_url)
+# Class-level equivalent takes a transfer_id directly instead of an instance
+Airwallex::Transfer.simulate_transition('tfr_123', next_status: 'CANCELLED')
+```
 
-# Simulate KYC/KYB review outcomes
+#### Connected Accounts & Offboarding
+
+```ruby
+# Simulate a KYC/KYB review outcome (account must currently be SUBMITTED)
 connected_account.simulate_update_status(next_status: 'ACTIVE')
-account_amendment.simulate_approve
+# or: connected_account.simulate_update_status(next_status: 'SUSPENDED')
+# or: connected_account.simulate_update_status(next_status: 'ACTION_REQUIRED')
+
+# Class-level equivalent takes an account_id directly instead of an instance
+Airwallex::ConnectedAccount.simulate_update_status('acct_123', next_status: 'ACTIVE')
+
+# Simulate a pending offboarding completing or being cancelled — via the
+# parent ConnectedAccount instance...
+connected_account.simulate_complete_offboarding('obd_456')
+connected_account.simulate_cancel_offboarding('obd_456')
+
+# ...or directly against AccountOffboarding with both ids
+Airwallex::AccountOffboarding.simulate_complete('acct_123', 'obd_456')
+Airwallex::AccountOffboarding.simulate_cancel('acct_123', 'obd_456')
+```
+
+#### Account Amendments
+
+```ruby
+amendment = Airwallex::AccountAmendment.create(
+  target: 'account_details.store_details',
+  store_details: { store_name: 'New Store Name' }
+)
+amendment.simulate_approve
+# or: amendment.simulate_reject
+
+# Class-level equivalents take an amendment_id directly instead of an instance
+Airwallex::AccountAmendment.simulate_approve('amd_123')
+Airwallex::AccountAmendment.simulate_reject('amd_123')
+```
+
+#### Linked Accounts (Direct Debit Mandates)
+
+```ruby
+# Mandate lifecycle: PROCESSING -> ACTIVE, or PROCESSING -> INACTIVE. All
+# four actions return HTTP 200 with an empty body, so the gem returns `true`
+# rather than a resource instance.
+Airwallex::LinkedAccount.simulate_accept_mandate('la_123')  # PROCESSING -> ACTIVE
+Airwallex::LinkedAccount.simulate_reject_mandate('la_123')  # PROCESSING -> INACTIVE
+Airwallex::LinkedAccount.simulate_cancel_mandate('la_123')  # PROCESSING or ACTIVE -> INACTIVE
+
+# Simulate a failed micro-deposit verification: REQUIRES_ACTION -> FAILED
+Airwallex::LinkedAccount.simulate_fail_microdeposits('la_123')
+```
+
+#### Shopper Actions
+
+```ruby
+# Simulate the shopper completing (or abandoning) a redirect/3DS challenge
+# raised during PaymentIntent#confirm, using the url from its next_action
+payment_intent.simulate_shopper_pay(url: next_action_url)
+# or: payment_intent.simulate_shopper_reject(url: next_action_url)
+
+# Simulate the shopper completing a redirect/3DS challenge raised during
+# PaymentConsent#verify, using the url from its next_action
+payment_consent.simulate_shopper_verify(url: next_action_url)
+```
+
+#### Issuing Cardholders
+
+```ruby
+# Bypass a cardholder's pending RFI review stage
+Airwallex::Cardholder.simulate_pass_review('chd_123')
+```
+
+#### Requests for Information (RFIs)
+
+```ruby
+# Raise a KYC RFI, then close it
+rfi = Airwallex::RFI.simulate_create(type: 'KYC', questions: [{ answer: { type: 'TEXT' } }])
+rfi.simulate_close
+
+# Follow up on an RFI — reopen an existing answered question (by id) or
+# append a new one
+rfi = Airwallex::RFI.simulate_create(type: 'KYC', questions: [{ answer: { type: 'TEXT' } }])
+rfi.simulate_follow_up(questions: [{ answer: { type: 'TEXT' } }])
+
+# Class-level equivalents take an rfi_id directly instead of an instance
+Airwallex::RFI.simulate_close('rfi_123')
+Airwallex::RFI.simulate_follow_up('rfi_123', questions: [{ answer: { type: 'TEXT' } }])
+```
+
+#### POS Terminals
+
+```ruby
+# Turn a terminal on, then have it confirm a PaymentIntent under a named test
+# scenario
+Airwallex::POSTerminal.simulate_turn_on(terminal_id: 'term_123')
+Airwallex::POSTerminal.simulate_confirm_payment_intent(
+  terminal_id: 'term_123', payment_scenario_name: 'approve'
+)
+Airwallex::POSTerminal.simulate_turn_off(terminal_id: 'term_123')
+
+# List the test scenario names available to simulate_confirm_payment_intent
+Airwallex::POSTerminal.simulate_payment_scenarios
+
+# Generate a terminal activation code
+Airwallex::POSTerminal.simulate_generate_activation_code(request_id: 'req_123')
 ```
 
 ## Usage

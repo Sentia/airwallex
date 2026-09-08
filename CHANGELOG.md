@@ -36,8 +36,6 @@
   - PaymentIntent gained `#simulate_shopper_pay`, `#simulate_shopper_reject`
   - PaymentConsent gained `#simulate_shopper_verify`
 - New tests covering all of the above (430 total)
-- `local_tests/simulation_smoke_test.rb` — a live sandbox smoke test for the
-  Simulation resources above (gitignored, not shipped in the gem)
 
 ### Fixed
 
