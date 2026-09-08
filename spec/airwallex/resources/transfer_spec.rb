@@ -165,4 +165,55 @@ RSpec.describe Airwallex::Transfer do
       expect(WebMock).to have_requested(:post, "#{BASE_URL}/api/v1/transfers/tfr_123/cancel")
     end
   end
+
+  describe ".simulate_transition" do
+    it "advances a transfer's status by id" do
+      stub_request(:post, "#{BASE_URL}/api/v1/simulation/transfers/tfr_123/transition")
+        .with(body: hash_including(next_status: "PROCESSING"))
+        .to_return(
+          status: 200,
+          body: { id: "tfr_123", status: "PROCESSING" }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      transfer = described_class.simulate_transition("tfr_123", next_status: "PROCESSING")
+
+      expect(transfer.status).to eq("PROCESSING")
+    end
+
+    it "includes failure_type when transitioning to FAILED" do
+      stub_request(:post, "#{BASE_URL}/api/v1/simulation/transfers/tfr_123/transition")
+        .with(body: hash_including(next_status: "FAILED", failure_type: "INSUFFICIENT_FUNDS"))
+        .to_return(
+          status: 200,
+          body: { id: "tfr_123", status: "FAILED" }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      transfer = described_class.simulate_transition(
+        "tfr_123", next_status: "FAILED", failure_type: "INSUFFICIENT_FUNDS"
+      )
+
+      expect(transfer.status).to eq("FAILED")
+    end
+  end
+
+  describe "#simulate_transition" do
+    let(:transfer) { described_class.new(id: "tfr_123", status: "SCHEDULED") }
+
+    it "advances this transfer's status and refreshes its state" do
+      stub_request(:post, "#{BASE_URL}/api/v1/simulation/transfers/tfr_123/transition")
+        .with(body: hash_including(next_status: "SENT"))
+        .to_return(
+          status: 200,
+          body: { id: "tfr_123", status: "SENT" }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      result = transfer.simulate_transition(next_status: "SENT")
+
+      expect(result).to eq(transfer)
+      expect(transfer.status).to eq("SENT")
+    end
+  end
 end

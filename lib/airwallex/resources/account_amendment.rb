@@ -21,9 +21,48 @@ module Airwallex
     extend APIOperations::Create
     extend APIOperations::Retrieve
 
+    # Sandbox-only — see https://www.airwallex.com/docs/api/simulation/account-amendments
+    SIMULATION_PATH = "/api/v1/simulation/account/amendments"
+
     # @return [String] API resource path for account amendments
     def self.resource_path
       "/api/v1/account/amendments"
+    end
+
+    # Simulate approving a PENDING amendment
+    #
+    # @param amendment_id [String]
+    # @return [AccountAmendment]
+    def self.simulate_approve(amendment_id)
+      response = Airwallex.client.post("#{SIMULATION_PATH}/#{amendment_id}/approve", {})
+      new(response)
+    end
+
+    # Simulate rejecting a PENDING amendment
+    #
+    # @param amendment_id [String]
+    # @return [AccountAmendment]
+    def self.simulate_reject(amendment_id)
+      response = Airwallex.client.post("#{SIMULATION_PATH}/#{amendment_id}/reject", {})
+      new(response)
+    end
+
+    # Simulate approving this amendment
+    #
+    # @return [AccountAmendment] self
+    def simulate_approve
+      response = Airwallex.client.post("#{self.class::SIMULATION_PATH}/#{id}/approve", {})
+      refresh_from(response)
+      self
+    end
+
+    # Simulate rejecting this amendment
+    #
+    # @return [AccountAmendment] self
+    def simulate_reject
+      response = Airwallex.client.post("#{self.class::SIMULATION_PATH}/#{id}/reject", {})
+      refresh_from(response)
+      self
     end
   end
 end

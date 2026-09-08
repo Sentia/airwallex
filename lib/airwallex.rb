@@ -48,6 +48,13 @@ require_relative "airwallex/resources/connected_account"
 require_relative "airwallex/resources/account_amendment"
 require_relative "airwallex/resources/funds_split"
 require_relative "airwallex/resources/charge"
+require_relative "airwallex/resources/deposit"
+require_relative "airwallex/resources/issuing_transaction"
+require_relative "airwallex/resources/cardholder"
+require_relative "airwallex/resources/linked_account"
+require_relative "airwallex/resources/account_offboarding"
+require_relative "airwallex/resources/rfi"
+require_relative "airwallex/resources/pos_terminal"
 
 module Airwallex
   class << self

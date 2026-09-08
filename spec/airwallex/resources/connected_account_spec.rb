@@ -241,4 +241,72 @@ RSpec.describe Airwallex::ConnectedAccount do
       expect(result[:balances].first[:currency]).to eq("AUD")
     end
   end
+
+  describe ".simulate_update_status" do
+    it "transitions a submitted account's status by id" do
+      stub_request(:post, "#{BASE_URL}/api/v1/simulation/accounts/acct_123/update_status")
+        .with(body: hash_including(next_status: "ACTIVE", force: true))
+        .to_return(
+          status: 200,
+          body: { id: "acct_123", status: "ACTIVE" }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      account = described_class.simulate_update_status("acct_123", next_status: "ACTIVE")
+
+      expect(account.status).to eq("ACTIVE")
+    end
+  end
+
+  describe "#simulate_update_status" do
+    let(:account) { described_class.new(id: "acct_123", status: "SUBMITTED") }
+
+    it "transitions this account's status and refreshes its state" do
+      stub_request(:post, "#{BASE_URL}/api/v1/simulation/accounts/acct_123/update_status")
+        .to_return(
+          status: 200,
+          body: { id: "acct_123", status: "SUSPENDED" }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      result = account.simulate_update_status(next_status: "SUSPENDED")
+
+      expect(result).to eq(account)
+      expect(account.status).to eq("SUSPENDED")
+    end
+  end
+
+  describe "#simulate_complete_offboarding" do
+    let(:account) { described_class.new(id: "acct_123") }
+
+    it "delegates to AccountOffboarding.simulate_complete" do
+      stub_request(:post, "#{BASE_URL}/api/v1/simulation/accounts/acct_123/offboardings/obd_1/complete")
+        .to_return(
+          status: 200,
+          body: { id: "obd_1", status: "COMPLETED" }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      offboarding = account.simulate_complete_offboarding("obd_1")
+
+      expect(offboarding.status).to eq("COMPLETED")
+    end
+  end
+
+  describe "#simulate_cancel_offboarding" do
+    let(:account) { described_class.new(id: "acct_123") }
+
+    it "delegates to AccountOffboarding.simulate_cancel" do
+      stub_request(:post, "#{BASE_URL}/api/v1/simulation/accounts/acct_123/offboardings/obd_1/cancel")
+        .to_return(
+          status: 200,
+          body: { id: "obd_1", status: "CANCELLED" }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      offboarding = account.simulate_cancel_offboarding("obd_1")
+
+      expect(offboarding.status).to eq("CANCELLED")
+    end
+  end
 end

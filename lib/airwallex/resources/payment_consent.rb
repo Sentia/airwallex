@@ -33,6 +33,9 @@ module Airwallex
       "/api/v1/pa/payment_consents"
     end
 
+    # Sandbox-only — see https://www.airwallex.com/docs/api/simulation/shopper-actions
+    SIMULATION_SHOPPER_ACTION_PATH = "/api/v1/simulation/pa/shopper_actions"
+
     # Verify this consent (e.g. via a zero/low-value authorization) before
     # it can be used for off-session charges
     #
@@ -61,6 +64,18 @@ module Airwallex
     # @return [PaymentConsent] self
     def disable(params = {})
       response = Airwallex.client.post("#{self.class.resource_path}/#{id}/disable", params)
+      refresh_from(response)
+      self
+    end
+
+    # Simulate the shopper completing a redirect/3DS challenge raised
+    # during #verify, using the `url` from the verify response's
+    # next_action
+    #
+    # @param url [String] the redirect URL from #verify's next_action
+    # @return [PaymentConsent] self
+    def simulate_shopper_verify(url:)
+      response = Airwallex.client.post("#{SIMULATION_SHOPPER_ACTION_PATH}/verify", url: url)
       refresh_from(response)
       self
     end

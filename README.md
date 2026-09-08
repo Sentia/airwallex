@@ -16,12 +16,13 @@ This gem provides a Ruby interface to Airwallex's payment infrastructure, design
 - **Billing**: Products, prices, billing customers, and subscriptions for recurring/instalment billing
 - **Recurring Payments**: Payment consents and payment sources for merchant-initiated (off-session) charges
 - **Scale**: Connected accounts, funds splits, and charges for platforms onboarding sub-merchants
+- **Sandbox Simulations**: Deposits, issuing transactions, disputes, transfer status, Direct Debit mandates, connected account/offboarding review outcomes, RFIs, and POS terminals — see [Sandbox Simulations](#sandbox-simulations)
 - **Idempotency**: Automatic request deduplication for safe retries
 - **Pagination**: Unified interface over cursor-based and offset-based pagination
 - **Webhook Security**: HMAC-SHA256 signature verification with replay protection
 - **Sandbox Support**: Full testing environment for development
 
-**Not yet implemented:** Card issuing.
+**Not yet implemented:** live Card issuing resources (Card, Cardholder create/retrieve/list) — only their sandbox Simulation actions are covered today.
 
 ## Installation
 
@@ -416,6 +417,60 @@ split.release
 charge = Airwallex::Charge.retrieve('charge_id')
 ```
 
+### Sandbox Simulations
+
+Sandbox-only endpoints (`/api/v1/simulation/...`) that stand in for the bank,
+card network, issuing bank, or shopper — for driving async/manual lifecycles
+in tests without waiting on real-world events. See
+https://www.airwallex.com/docs/api/simulation/ for the full reference. All
+of these raise `Airwallex::Error` (same as any other endpoint) if called
+against a production API key.
+
+```ruby
+# Simulate an inbound bank transfer landing in a Global Account (settles on
+# its own within a few seconds, same as a real bank transfer)
+Airwallex::Deposit.simulate_create(amount: 100.00, global_account_id: 'gacc_123')
+
+# .simulate_settle/.simulate_reject/.simulate_reverse are for Direct Debit
+# deposits specifically, made via the real (non-simulation) .create — a real
+# direct debit pull takes days to clear, so the sandbox needs a way to force it
+deposit = Airwallex::Deposit.create(funding_source_id: 'la_123', amount: 50.00, currency: 'AUD')
+deposit.simulate_settle
+
+# Simulate a card authorization, then capture part of it
+txn = Airwallex::IssuingTransaction.simulate_create(
+  card_id: 'card_123',
+  transaction_amount: 25.00,
+  transaction_currency: 'USD'
+)
+Airwallex::IssuingTransaction.simulate_capture(txn.transaction_id, transaction_amount: 10.00)
+
+# Simulate a full dispute lifecycle: raised, challenged, then resolved
+dispute = Airwallex::Dispute.simulate_create(
+  payment_intent_id: payment_intent.id,
+  reason_code: '4853',
+  stage: 'CHARGEBACK',
+  due_at: (Time.now + 86_400).iso8601
+)
+dispute.challenge(customer_communication: 'Proof of delivery')
+dispute.simulate_resolve(in_favor_of: 'MERCHANT')
+
+# Simulate a transfer's status advancing one step at a time
+transfer.simulate_transition(next_status: 'PROCESSING')
+transfer.simulate_transition(next_status: 'SENT')
+transfer.simulate_transition(next_status: 'PAID')
+
+# Simulate a Direct Debit mandate being approved by the customer's bank
+Airwallex::LinkedAccount.simulate_accept_mandate('la_123')
+
+# Simulate the shopper completing a 3DS/redirect challenge from #confirm
+payment_intent.simulate_shopper_pay(url: next_action_url)
+
+# Simulate KYC/KYB review outcomes
+connected_account.simulate_update_status(next_status: 'ACTIVE')
+account_amendment.simulate_approve
+```
+
 ## Usage
 
 ### Authentication
@@ -588,13 +643,13 @@ end
 ### Currently Implemented Resources
 
 - **Payment Acceptance**:
-  - PaymentIntent (create, retrieve, list, update, confirm, cancel, capture)
+  - PaymentIntent (create, retrieve, list, update, confirm, cancel, capture, simulate_shopper_pay, simulate_shopper_reject)
   - Refund (create, retrieve, list)
   - PaymentMethod (create, retrieve, list, update, disable)
   - Customer (create, retrieve, list, update, delete)
-  - Dispute (retrieve, list, accept, challenge, related_payment_intents)
+  - Dispute (retrieve, list, accept, challenge, related_payment_intents, simulate_create, simulate_escalate, simulate_resolve)
 - **Payouts**:
-  - Transfer (create, retrieve, list, cancel)
+  - Transfer (create, retrieve, list, cancel, simulate_transition)
   - Beneficiary (create, retrieve, list, update, delete, validate, verify_account, api_schema, form_schema, supported_financial_institutions)
   - BatchTransfer (create, retrieve, list)
 - **Foreign Exchange & Multi-Currency**:
@@ -605,6 +660,8 @@ end
 - **Global Accounts**:
   - GlobalAccount (create, retrieve, list, update, close, generate_statement_letter, create_alias, aliases, mandate, mandates)
   - GlobalAccountTransaction, GlobalAccountAlias, GlobalAccountMandate (list/lifecycle actions scoped to a parent account)
+  - Deposit (create, retrieve, list — Direct Debit only; simulate_create for a Global Account bank-transfer deposit, simulate_settle/simulate_reject/simulate_reverse for Direct Debit deposits made via create)
+  - LinkedAccount — sandbox Simulation only (simulate_accept_mandate, simulate_reject_mandate, simulate_cancel_mandate, simulate_fail_microdeposits)
 - **Billing & Subscriptions**:
   - BillingCustomer (create, retrieve, list, update, bank_transfer_instructions)
   - BillingProduct (create, retrieve, list, update)
@@ -612,18 +669,26 @@ end
   - BillingSubscription (create, retrieve, list, update, items)
   - BillingSubscriptionItem (scoped to a parent subscription)
 - **Recurring Payments**:
-  - PaymentConsent (create, retrieve, list, update, verify, verify_continue, disable)
+  - PaymentConsent (create, retrieve, list, update, verify, verify_continue, disable, simulate_shopper_verify)
   - PaymentSource (create, retrieve, list)
 - **Scale**:
-  - ConnectedAccount (create, retrieve, list, update, current, wallet_info, submit, agree_to_terms_and_conditions, suspend, reactivate)
-  - AccountAmendment (create, retrieve) - requires Admin-level API key permissions
+  - ConnectedAccount (create, retrieve, list, update, current, wallet_info, submit, agree_to_terms_and_conditions, suspend, reactivate, simulate_update_status, simulate_complete_offboarding, simulate_cancel_offboarding)
+  - AccountAmendment (create, retrieve, simulate_approve, simulate_reject) - requires Admin-level API key permissions
+  - AccountOffboarding — sandbox Simulation only, scoped to a parent ConnectedAccount (simulate_complete, simulate_cancel)
   - FundsSplit (create, retrieve, list, release)
   - Charge (create, retrieve, list)
+- **Issuing** (sandbox Simulation only — no live Card/Cardholder resources yet):
+  - IssuingTransaction (simulate_create with single_phase, simulate_capture, simulate_reverse, simulate_refund, simulate_notify_three_ds)
+  - Cardholder (simulate_pass_review)
+- **In-Person Payments** (sandbox Simulation only):
+  - POSTerminal (simulate_turn_on, simulate_turn_off, simulate_generate_activation_code, simulate_confirm_payment_intent, simulate_payment_scenarios)
+- **Compliance** (sandbox Simulation only):
+  - RFI (simulate_create, simulate_close, simulate_follow_up)
 - **Webhooks**: Event handling, HMAC-SHA256 signature verification
 
 ### Coming in Future Versions
 
-- Card issuing
+- Live Card issuing resources (Card, Cardholder create/retrieve/list) — only their sandbox Simulation actions are implemented today
 
 ## Environment Support
 

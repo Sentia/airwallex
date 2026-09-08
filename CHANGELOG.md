@@ -1,8 +1,70 @@
 ## [Unreleased]
 
+## [0.9.0] - 2026-09-09
+
+### Added
+
+- Sandbox Simulation API coverage (all sandbox-only, see
+  https://www.airwallex.com/docs/api/simulation/):
+  - Deposit resource (`.create`/`.retrieve`/`.list` for real Direct Debit deposits,
+    `.simulate_create` for a Global Account bank-transfer deposit, `.simulate_settle`,
+    `.simulate_reject`, `.simulate_reverse` — the latter three only operate on
+    Direct Debit deposits made via `.create`, confirmed against the live sandbox;
+    a bank-transfer deposit from `.simulate_create` auto-settles on its own)
+  - IssuingTransaction resource (`.simulate_create` with `single_phase`,
+    `.simulate_capture`, `.simulate_reverse`, `.simulate_refund`,
+    `.simulate_notify_three_ds`) — `.simulate_create`'s response key is
+    `transaction_id` (confirmed against the live sandbox; earlier docs research
+    suggested `card_transaction_lifecycle_id`, which the API doesn't return)
+  - Cardholder resource (`.simulate_pass_review`)
+  - LinkedAccount resource (`.simulate_accept_mandate`, `.simulate_reject_mandate`,
+    `.simulate_cancel_mandate`, `.simulate_fail_microdeposits`)
+  - AccountOffboarding nested resource (`.simulate_complete`, `.simulate_cancel`),
+    scoped to a parent ConnectedAccount
+  - RFI resource (`.simulate_create`, `.simulate_close`, `.simulate_follow_up`,
+    plus instance equivalents)
+  - POSTerminal resource (`.simulate_turn_on`, `.simulate_turn_off`,
+    `.simulate_generate_activation_code`, `.simulate_confirm_payment_intent`,
+    `.simulate_payment_scenarios`)
+  - Transfer gained `.simulate_transition`/`#simulate_transition`
+  - Dispute gained `.simulate_create`, `.simulate_escalate`/`#simulate_escalate`,
+    `.simulate_resolve`/`#simulate_resolve`
+  - ConnectedAccount gained `.simulate_update_status`/`#simulate_update_status`,
+    `#simulate_complete_offboarding`, `#simulate_cancel_offboarding`
+  - AccountAmendment gained `.simulate_approve`/`#simulate_approve`,
+    `.simulate_reject`/`#simulate_reject`
+  - PaymentIntent gained `#simulate_shopper_pay`, `#simulate_shopper_reject`
+  - PaymentConsent gained `#simulate_shopper_verify`
+- New tests covering all of the above (430 total)
+- `local_tests/simulation_smoke_test.rb` — a live sandbox smoke test for the
+  Simulation resources above (gitignored, not shipped in the gem)
+
+### Fixed
+
+- RFI question `answer.type` corrected to the real uppercase enum (`"TEXT"`,
+  not `"text"`) — confirmed against the live sandbox
+
+### Verified against the live sandbox
+
+- `Deposit.simulate_create`, `Transfer.simulate_transition`,
+  `Dispute.simulate_create`, `RFI.simulate_create`/`#simulate_close`,
+  `IssuingTransaction.simulate_create`/`.simulate_refund` all confirmed
+  working end-to-end
+- `IssuingTransaction.simulate_capture`/`.simulate_reverse` and
+  `AccountAmendment.simulate_approve` reach the correct endpoint (accepted,
+  not 404) but couldn't be fully exercised on this account — both require
+  Admin-level API key permissions this sandbox key doesn't have
+- Found and worked around (in the smoke test only) a pre-existing bug in
+  `Client`'s Faraday retry configuration: `retry_options[:exceptions]`
+  doesn't include `Faraday::RetriableResponse`, so any POST that gets back
+  a `retry_statuses` code (429/500/502/503/504) raises uncaught instead of
+  being returned as a normal `Airwallex::Error` — unrelated to the
+  Simulation resources, not fixed here
+
 ## [0.8.0] - 2026-09-02
 
 ### Fixed
+
 - `Util.deep_symbolize_keys` now recurses into `Array`s, matching `ActiveSupport#deep_transform_keys`'s
   behavior. Previously any `Array` value was copied through untouched, so hashes nested inside an array
   (e.g. `beneficiary_form_schemas`'s `fields` list) kept string keys even after "deep" symbolizing.
@@ -22,6 +84,7 @@
 ## [0.7.0] - 2026-08-28
 
 ### Added
+
 - GlobalAccount resource (create, retrieve, list, update, `#close`, `#generate_statement_letter`,
   `#transactions`)
   - GlobalAccountAlias nested resource (`#create_alias`, `#alias`, `#aliases`, `#initiate_port`,
@@ -42,6 +105,7 @@
 - New tests covering all of the above (378 total)
 
 ### Fixed
+
 - `APIOperations::Update` now sends `POST #{resource_path}/{id}/update` instead of `PUT #{resource_path}/{id}`
 - `APIOperations::Delete` now sends `POST #{resource_path}/{id}/delete` instead of `DELETE #{resource_path}/{id}`,
   and checks the response instead of always returning `true`
@@ -73,12 +137,14 @@
 - `Quote.create` requires `validity` (`MIN_1`, `MIN_15`, `MIN_30`, `HR_1`, `HR_4`, `HR_8`, or `HR_24`)
 
 ### Removed
+
 - `Rate.list` — the endpoint has no "list all rates" concept, only `.retrieve(sell_currency:, buy_currency:)`
 - `PaymentMethod.delete` and `PaymentMethod#detach` — replaced by `#disable`, the real lifecycle operation
 
 ## [0.6.0] - 2026-08-28
 
 ### Fixed
+
 - `Webhook::Event` now correctly exposes the event type. Airwallex sends this field as `"name"` in
   the webhook payload, not `"type"` — the previous `Event#type` reader was reading a key that doesn't
   exist and always returned `nil`. The accessor is renamed to `Event#name` to match Airwallex's actual
@@ -87,6 +153,7 @@
 ## [0.5.0] - 2026-08-28
 
 ### Fixed
+
 - Webhook signature verification no longer rejects valid webhooks when Airwallex sends
   millisecond-precision timestamps. `verify_timestamp` now detects millisecond values (anything at or
   above `MS_THRESHOLD = 10_000_000_000`, which safely distinguishes seconds from milliseconds until the
@@ -95,6 +162,7 @@
 ## [0.4.0] - 2026-08-27
 
 ### Fixed
+
 - `Idempotency` and `AuthRefresh` middleware are now actually registered on the Faraday connection.
   Previously both classes existed but were never wired in, so the "automatic `request_id` generation"
   and "retry once after a 401" behavior documented in the README did not happen at runtime.
@@ -103,12 +171,14 @@
 - CI now triggers on pushes to `main` (previously configured for `master`, so pushes never ran CI).
 
 ### Changed
+
 - `Client#request` no longer manually manages the `Authorization` header or calls
   `ensure_authenticated!` directly; this is now owned by the `AuthRefresh` middleware.
 
 ## [0.3.0] - 2025-11-25
 
 ### Added
+
 - BatchTransfer resource (create, retrieve, list) for bulk payout operations
 - Dispute resource (retrieve, list, accept, submit_evidence) for chargeback management
 - Foreign Exchange resources:
@@ -121,15 +191,18 @@
 - Comprehensive manual test suite for regression testing
 
 ### Changed
+
 - Refactored List operation for better code quality (reduced complexity from 12 to 7)
 - Balance.retrieve now performs client-side filtering for currency lookup
 
 ### Fixed
+
 - List operation now correctly handles Balance API's direct array response format
 
 ## [0.2.0] - 2025-11-25
 
 ### Added
+
 - Refund resource (create, retrieve, list)
 - PaymentMethod resource (create, retrieve, list, update, delete, detach)
 - Customer resource (create, retrieve, list, update, delete)
@@ -139,6 +212,7 @@
 ## [0.1.0] - 2025-11-25
 
 ### Added
+
 - Core infrastructure: Configuration, Client, Error handling
 - Authentication: Bearer token with automatic refresh
 - API Resources:
@@ -154,5 +228,6 @@
 - Ruby 3.1+ support
 
 ### Notes
+
 - This is an MVP release focusing on core payment acceptance and payout functionality
 - Additional resources (FX, cards, refunds) will be added in future versions
