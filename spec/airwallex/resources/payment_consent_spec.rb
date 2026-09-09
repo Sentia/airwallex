@@ -163,4 +163,23 @@ RSpec.describe Airwallex::PaymentConsent do
       expect(consent.status).to eq("DISABLED")
     end
   end
+
+  describe "#simulate_shopper_verify" do
+    let(:consent) { described_class.new(id: "consent_123", status: "REQUIRES_CUSTOMER_ACTION") }
+
+    it "simulates the shopper completing a verification challenge" do
+      stub_request(:post, "#{BASE_URL}/api/v1/simulation/pa/shopper_actions/verify")
+        .with(body: hash_including(url: "https://api-demo.airwallex.com/redirect/abc"))
+        .to_return(
+          status: 200,
+          body: { id: "consent_123", status: "VERIFIED" }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      result = consent.simulate_shopper_verify(url: "https://api-demo.airwallex.com/redirect/abc")
+
+      expect(result).to eq(consent)
+      expect(consent.status).to eq("VERIFIED")
+    end
+  end
 end

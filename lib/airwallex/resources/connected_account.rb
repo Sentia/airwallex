@@ -57,9 +57,27 @@ module Airwallex
     CURRENT_ACCOUNT_PATH = "/api/v1/account"
     WALLET_INFO_PATH = "/api/v1/account/wallet_info"
 
+    # Sandbox-only — see https://www.airwallex.com/docs/api/simulation/connected-accounts
+    SIMULATION_PATH = "/api/v1/simulation/accounts"
+
     # @return [String] API resource path for connected accounts
     def self.resource_path
       "/api/v1/accounts"
+    end
+
+    # Simulate this account's status transitioning. The account must
+    # currently be SUBMITTED.
+    #
+    # @param account_id [String]
+    # @param next_status [String] one of "ACTIVE", "SUSPENDED",
+    #   "ACTION_REQUIRED"
+    # @param force [Boolean] defaults to true
+    # @return [ConnectedAccount]
+    def self.simulate_update_status(account_id, next_status:, force: true)
+      response = Airwallex.client.post(
+        "#{SIMULATION_PATH}/#{account_id}/update_status", next_status: next_status, force: force
+      )
+      new(response)
     end
 
     # Retrieve whichever account the current request is authenticated as
@@ -131,6 +149,37 @@ module Airwallex
       response = Airwallex.client.post("#{self.class.resource_path}/#{id}/reactivate", params)
       refresh_from(response)
       self
+    end
+
+    # Simulate this account's status transitioning. The account must
+    # currently be SUBMITTED.
+    #
+    # @param next_status [String] one of "ACTIVE", "SUSPENDED",
+    #   "ACTION_REQUIRED"
+    # @param force [Boolean] defaults to true
+    # @return [ConnectedAccount] self
+    def simulate_update_status(next_status:, force: true)
+      response = Airwallex.client.post(
+        "#{self.class::SIMULATION_PATH}/#{id}/update_status", next_status: next_status, force: force
+      )
+      refresh_from(response)
+      self
+    end
+
+    # Simulate a pending offboarding on this account completing
+    #
+    # @param offboarding_id [String]
+    # @return [AccountOffboarding]
+    def simulate_complete_offboarding(offboarding_id)
+      AccountOffboarding.simulate_complete(id, offboarding_id)
+    end
+
+    # Simulate a pending offboarding on this account being cancelled
+    #
+    # @param offboarding_id [String]
+    # @return [AccountOffboarding]
+    def simulate_cancel_offboarding(offboarding_id)
+      AccountOffboarding.simulate_cancel(id, offboarding_id)
     end
   end
 end

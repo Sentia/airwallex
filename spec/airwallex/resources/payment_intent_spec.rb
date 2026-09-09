@@ -380,4 +380,41 @@ RSpec.describe Airwallex::PaymentIntent do
       expect(WebMock).not_to have_requested(:post, %r{payment_intents/pi_123/update})
     end
   end
+
+  describe "#simulate_shopper_pay" do
+    let(:intent) { described_class.new(id: "pi_123", status: "REQUIRES_CUSTOMER_ACTION") }
+
+    it "simulates the shopper completing a redirect challenge" do
+      stub_request(:post, "#{BASE_URL}/api/v1/simulation/pa/shopper_actions/pay")
+        .with(body: hash_including(url: "https://api-demo.airwallex.com/redirect/abc"))
+        .to_return(
+          status: 200,
+          body: { id: "pi_123", status: "SUCCEEDED" }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      result = intent.simulate_shopper_pay(url: "https://api-demo.airwallex.com/redirect/abc")
+
+      expect(result).to eq(intent)
+      expect(intent.status).to eq("SUCCEEDED")
+    end
+  end
+
+  describe "#simulate_shopper_reject" do
+    let(:intent) { described_class.new(id: "pi_123", status: "REQUIRES_CUSTOMER_ACTION") }
+
+    it "simulates the shopper abandoning a redirect challenge" do
+      stub_request(:post, "#{BASE_URL}/api/v1/simulation/pa/shopper_actions/reject")
+        .with(body: hash_including(url: "https://api-demo.airwallex.com/redirect/abc"))
+        .to_return(
+          status: 200,
+          body: { id: "pi_123", status: "CANCELLED" }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      intent.simulate_shopper_reject(url: "https://api-demo.airwallex.com/redirect/abc")
+
+      expect(intent.status).to eq("CANCELLED")
+    end
+  end
 end

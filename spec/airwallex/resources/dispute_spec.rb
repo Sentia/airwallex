@@ -378,6 +378,101 @@ RSpec.describe Airwallex::Dispute do
     end
   end
 
+  describe ".simulate_create" do
+    it "simulates a card network raising a dispute" do
+      stub_request(:post, "#{BASE_URL}/api/v1/simulation/pa/payment_disputes/create")
+        .with(body: hash_including(payment_intent_id: "int_abc123", reason_code: "4853", stage: "CHARGEBACK"))
+        .to_return(
+          status: 200,
+          body: {
+            id: "dis_sim_1",
+            payment_intent_id: "int_abc123",
+            status: "REQUIRES_RESPONSE",
+            stage: "CHARGEBACK"
+          }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      dispute = described_class.simulate_create(
+        payment_intent_id: "int_abc123",
+        reason_code: "4853",
+        stage: "CHARGEBACK",
+        due_at: "2026-12-01T23:59:59Z"
+      )
+
+      expect(dispute).to be_a(described_class)
+      expect(dispute.status).to eq("REQUIRES_RESPONSE")
+    end
+  end
+
+  describe ".simulate_escalate" do
+    it "advances a dispute to the next stage by id" do
+      stub_request(:post, "#{BASE_URL}/api/v1/simulation/pa/payment_disputes/dis_123/escalate")
+        .with(body: hash_including(due_at: "2026-12-15T23:59:59Z"))
+        .to_return(
+          status: 200,
+          body: { id: "dis_123", stage: "PRE_ARBITRATION" }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      dispute = described_class.simulate_escalate("dis_123", due_at: "2026-12-15T23:59:59Z")
+
+      expect(dispute.stage).to eq("PRE_ARBITRATION")
+    end
+  end
+
+  describe ".simulate_resolve" do
+    it "resolves a dispute in favor of the merchant by id" do
+      stub_request(:post, "#{BASE_URL}/api/v1/simulation/pa/payment_disputes/dis_123/resolve")
+        .with(body: hash_including(in_favor_of: "MERCHANT"))
+        .to_return(
+          status: 200,
+          body: { id: "dis_123", status: "WON" }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      dispute = described_class.simulate_resolve("dis_123", in_favor_of: "MERCHANT")
+
+      expect(dispute.status).to eq("WON")
+    end
+  end
+
+  describe "#simulate_escalate" do
+    let(:dispute) { described_class.new(id: "dis_123", stage: "CHARGEBACK") }
+
+    it "advances this dispute and refreshes its state" do
+      stub_request(:post, "#{BASE_URL}/api/v1/simulation/pa/payment_disputes/dis_123/escalate")
+        .to_return(
+          status: 200,
+          body: { id: "dis_123", stage: "PRE_ARBITRATION" }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      result = dispute.simulate_escalate(due_at: "2026-12-15T23:59:59Z")
+
+      expect(result).to eq(dispute)
+      expect(dispute.stage).to eq("PRE_ARBITRATION")
+    end
+  end
+
+  describe "#simulate_resolve" do
+    let(:dispute) { described_class.new(id: "dis_123", status: "CHALLENGED") }
+
+    it "resolves this dispute in favor of the customer" do
+      stub_request(:post, "#{BASE_URL}/api/v1/simulation/pa/payment_disputes/dis_123/resolve")
+        .with(body: hash_including(in_favor_of: "CUSTOMER"))
+        .to_return(
+          status: 200,
+          body: { id: "dis_123", status: "LOST" }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      dispute.simulate_resolve(in_favor_of: "CUSTOMER")
+
+      expect(dispute.status).to eq("LOST")
+    end
+  end
+
   describe "error handling" do
     it "handles dispute not found" do
       stub_request(:get, "#{BASE_URL}/api/v1/pa/payment_disputes/dis_missing")
