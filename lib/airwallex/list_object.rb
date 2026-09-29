@@ -6,12 +6,19 @@ module Airwallex
 
     attr_reader :data, :has_more, :next_cursor
 
-    def initialize(data:, has_more:, resource_class:, next_cursor: nil, params: {})
+    # @param cursor_param [Symbol] query param the next cursor is sent as
+    #   (e.g. :page for bookmark-paginated endpoints like RFI)
+    # @param opts [Hash] the original request opts (e.g. headers:), forwarded
+    #   to every subsequent page so x-on-behalf-of etc. are kept
+    def initialize(data:, has_more:, resource_class:, next_cursor: nil, params: {}, # rubocop:disable Metrics/ParameterLists
+                   cursor_param: :next_cursor, opts: {})
       @data = data.map { |item| resource_class.new(item) }
       @has_more = has_more
       @next_cursor = next_cursor
       @resource_class = resource_class
       @params = params
+      @cursor_param = cursor_param
+      @opts = opts
     end
 
     def each(&)
@@ -49,7 +56,7 @@ module Airwallex
 
       if @next_cursor
         # Cursor-based pagination
-        next_params[:next_cursor] = @next_cursor
+        next_params[@cursor_param] = @next_cursor
       else
         # Offset-based pagination
         page_size = @params[:page_size] || @params[:limit] || 20
@@ -57,7 +64,7 @@ module Airwallex
         next_params[:offset] = current_offset + page_size
       end
 
-      @resource_class.list(next_params)
+      @opts.empty? ? @resource_class.list(next_params) : @resource_class.list(next_params, @opts)
     end
 
     # Automatically iterate through all pages

@@ -1,5 +1,25 @@
 ## [Unreleased]
 
+## [0.10.0] - 2026-09-29
+
+### Added
+
+- `RFI.retrieve` (`GET /api/v1/rfis/{id}`) and `RFI.list` (`GET /api/v1/rfis`, filterable by
+  `statuses`, `types`, `from_created_at`, `end_created_at`, `page_size`). Both take
+  `headers:` for `x-on-behalf-of`
+- `RFI.list` supports bookmark pagination: `has_more`/`next_cursor` come from `page_after`, and
+  `next_page`/`auto_paging_each` request `page: <page_after>`
+- `ListObject` accepts `cursor_param:` (defaults to `:next_cursor`) and `opts:`, and forwards
+  the original `opts` (e.g. `headers:`) to subsequent pages. Resources that don't pass these
+  behave exactly as before
+- `RFI.simulate_create`/`.simulate_close`/`.simulate_follow_up` and the instance
+  `#simulate_close`/`#simulate_follow_up` accept an optional trailing `opts` hash with `headers:`
+
+### Changed
+
+- `RFI.resource_path` is now `/api/v1/rfis`; the simulation path moved to `RFI::SIMULATION_PATH`
+  (`/api/v1/simulation/rfis`). Simulation methods hit the same URLs as before
+
 ## [0.9.0] - 2026-09-09
 
 ### Added
