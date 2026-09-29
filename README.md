@@ -16,6 +16,7 @@ This gem provides a Ruby interface to Airwallex's payment infrastructure, design
 - **Billing**: Products, prices, billing customers, and subscriptions for recurring/instalment billing
 - **Recurring Payments**: Payment consents and payment sources for merchant-initiated (off-session) charges
 - **Scale**: Connected accounts, funds splits, and charges for platforms onboarding sub-merchants
+- **Compliance**: Retrieve and list Requests for Information (RFIs), including for connected accounts
 - **Sandbox Simulations**: Deposits, issuing transactions, disputes, transfer status, Direct Debit mandates, connected account/offboarding review outcomes, RFIs, and POS terminals — see [Sandbox Simulations](#sandbox-simulations)
 - **Idempotency**: Automatic request deduplication for safe retries
 - **Pagination**: Unified interface over cursor-based and offset-based pagination
@@ -417,6 +418,26 @@ split.release
 charge = Airwallex::Charge.retrieve('charge_id')
 ```
 
+### Requests for Information (RFIs)
+
+RFIs are compliance questions Airwallex raises against an account. They use
+bookmark pagination (`page_after`/`page`), which `ListObject` handles for you,
+and connected accounts are addressed with `x-on-behalf-of`, which is kept
+across pages. The API key needs the **Risk → Request for Information (RFI):
+Read** permission, or Airwallex responds with 401 (`Airwallex::AuthenticationError`).
+
+```ruby
+headers = { 'x-on-behalf-of' => 'acct_123' }
+
+rfi = Airwallex::RFI.retrieve('rfi_123', headers: headers)
+rfi.status                           # => "ACTION_REQUIRED"
+rfi.active_request[:questions].first # => { id: ..., title: { en: ... }, answer: { type: "ATTACHMENT" }, ... }
+
+# statuses/types are comma-separated strings; page_size is 1-2000 (default 100)
+Airwallex::RFI.list({ statuses: 'ACTION_REQUIRED', types: 'KYC,KYC_ONGOING' }, headers: headers)
+              .auto_paging_each { |r| puts r.id }
+```
+
 ### Sandbox Simulations
 
 Sandbox-only endpoints (`/api/v1/simulation/...`) that stand in for the bank,
@@ -621,6 +642,14 @@ rfi.simulate_follow_up(questions: [{ answer: { type: 'TEXT' } }])
 # Class-level equivalents take an rfi_id directly instead of an instance
 Airwallex::RFI.simulate_close('rfi_123')
 Airwallex::RFI.simulate_follow_up('rfi_123', questions: [{ answer: { type: 'TEXT' } }])
+
+# Raise an RFI against a connected account — params need braces when
+# followed by opts. Fails with BadRequestError ("ongoing RFI case exists")
+# if the account already has an open RFI.
+Airwallex::RFI.simulate_create(
+  { type: 'KYC', questions: [{ answer: { type: 'TEXT' } }] },
+  headers: { 'x-on-behalf-of' => 'acct_123' }
+)
 ```
 
 #### POS Terminals
@@ -679,7 +708,8 @@ transfer = Airwallex::Transfer.create(
 
 ### Pagination
 
-Unified interface across both cursor-based and offset-based endpoints:
+Unified interface across cursor-based, offset-based, and bookmark-based (RFI) endpoints.
+Any `headers:` passed to `.list` (e.g. `x-on-behalf-of`) are kept on every page:
 
 ```ruby
 # Auto-pagination with enumerable
@@ -852,8 +882,8 @@ end
   - Cardholder (simulate_pass_review)
 - **In-Person Payments** (sandbox Simulation only):
   - POSTerminal (simulate_turn_on, simulate_turn_off, simulate_generate_activation_code, simulate_confirm_payment_intent, simulate_payment_scenarios)
-- **Compliance** (sandbox Simulation only):
-  - RFI (simulate_create, simulate_close, simulate_follow_up)
+- **Compliance**:
+  - RFI (retrieve, list, plus sandbox simulate_create, simulate_close, simulate_follow_up)
 - **Webhooks**: Event handling, HMAC-SHA256 signature verification
 
 ### Coming in Future Versions

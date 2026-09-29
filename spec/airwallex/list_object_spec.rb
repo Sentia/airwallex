@@ -175,6 +175,31 @@ RSpec.describe Airwallex::ListObject do
       end
     end
 
+    context "with a custom cursor_param and opts" do
+      it "sends the cursor under that param and forwards the original opts" do
+        stub = stub_request(:get, "#{BASE_URL}/api/v1/test_resources")
+               .with(query: { page: "bookmark_2", page_size: 10 }, headers: { "x-on-behalf-of" => "acct_1" })
+               .to_return(
+                 status: 200,
+                 body: { items: [{ id: "item_4" }], has_more: false }.to_json,
+                 headers: { "Content-Type" => "application/json" }
+               )
+
+        list = described_class.new(
+          data: items_data,
+          has_more: true,
+          next_cursor: "bookmark_2",
+          cursor_param: :page,
+          resource_class: resource_class,
+          params: { page_size: 10 },
+          opts: { headers: { "x-on-behalf-of" => "acct_1" } }
+        )
+
+        expect(list.next_page.first.id).to eq("item_4")
+        expect(stub).to have_been_requested
+      end
+    end
+
     context "with offset pagination" do
       it "fetches next page using offset" do
         stub_request(:get, "#{BASE_URL}/api/v1/test_resources")
