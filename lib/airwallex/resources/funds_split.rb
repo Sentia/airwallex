@@ -1,18 +1,32 @@
 # frozen_string_literal: true
 
 module Airwallex
-  # Represents a Funds Split — how a single PaymentIntent/inbound transaction
-  # is divided between the platform and a Connected Account at collection
-  # time (the Scale-product mechanism for splitting deposits).
+  # Represents a Funds Split — moves part of a PaymentIntent's funds from the
+  # platform account to a Connected Account. Each split has exactly one
+  # destination; create one split per connected account.
+  #
+  # Create errors include duplicate_request (reused request_id) and
+  # amount_above_limit (splits exceed the PaymentIntent amount).
+  #
+  # funds_split.* webhook payloads name the split split_id, not id, and carry
+  # no request_id: { split_id:, status:, amount:, currency:, source_id:,
+  # source_type:, destination:, ... }.
   #
   # @example Create a split
   #   split = Airwallex::FundsSplit.create(
-  #     payment_intent_id: intent.id,
-  #     splits: [{ account_id: connected_account.id, amount: 50.00 }]
+  #     request_id: "split-req-123",   # required, max 64
+  #     source_id: intent.id,          # required, PaymentIntent id
+  #     source_type: "PAYMENT_INTENT", # required
+  #     amount: "50.00",               # required, string
+  #     destination: connected_account.id,
+  #     auto_release: true,            # optional, default true
+  #     metadata: { order_id: "123" }  # optional
   #   )
   #
-  # @example Release the split funds
+  # @example Release the split funds (when created with auto_release: false)
   #   split.release
+  #
+  # @see FundsSplitReversal to move split funds back to the platform
   class FundsSplit < APIResource
     extend APIOperations::Create
     extend APIOperations::Retrieve

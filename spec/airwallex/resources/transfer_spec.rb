@@ -164,6 +164,13 @@ RSpec.describe Airwallex::Transfer do
 
       expect(WebMock).to have_requested(:post, "#{BASE_URL}/api/v1/transfers/tfr_123/cancel")
     end
+
+    it "sends x-on-behalf-of when given" do
+      transfer.cancel(headers: { "x-on-behalf-of" => "acct_123" })
+
+      expect(WebMock).to have_requested(:post, "#{BASE_URL}/api/v1/transfers/tfr_123/cancel")
+        .with(headers: { "x-on-behalf-of" => "acct_123" })
+    end
   end
 
   describe ".simulate_transition" do
@@ -196,6 +203,25 @@ RSpec.describe Airwallex::Transfer do
 
       expect(transfer.status).to eq("FAILED")
     end
+
+    it "sends x-on-behalf-of for a transfer created on behalf of a connected account" do
+      stub_request(:post, "#{BASE_URL}/api/v1/simulation/transfers/tfr_123/transition")
+        .with(
+          body: hash_including(next_status: "SENT"),
+          headers: { "x-on-behalf-of" => "acct_123" }
+        )
+        .to_return(
+          status: 200,
+          body: { id: "tfr_123", status: "SENT" }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      transfer = described_class.simulate_transition(
+        "tfr_123", next_status: "SENT", headers: { "x-on-behalf-of" => "acct_123" }
+      )
+
+      expect(transfer.status).to eq("SENT")
+    end
   end
 
   describe "#simulate_transition" do
@@ -214,6 +240,20 @@ RSpec.describe Airwallex::Transfer do
 
       expect(result).to eq(transfer)
       expect(transfer.status).to eq("SENT")
+    end
+
+    it "sends x-on-behalf-of when given" do
+      stub_request(:post, "#{BASE_URL}/api/v1/simulation/transfers/tfr_123/transition")
+        .with(headers: { "x-on-behalf-of" => "acct_123" })
+        .to_return(
+          status: 200,
+          body: { id: "tfr_123", status: "PAID" }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      transfer.simulate_transition(next_status: "PAID", headers: { "x-on-behalf-of" => "acct_123" })
+
+      expect(transfer.status).to eq("PAID")
     end
   end
 end
