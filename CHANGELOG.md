@@ -1,5 +1,31 @@
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-01
+
+### Added
+
+- `FundsSplitReversal` resource (`.create`, `.retrieve`, `.list`) for
+  `/api/v1/pa/funds_split_reversals`, which moves split funds back from a
+  connected account to the platform. `.list` takes the required `funds_split_id:`.
+  Partial reversals are allowed until the full split is reversed
+- `ConnectedAccountTransfer` resource (`.create`, `.retrieve`, `.list`) for
+  `/api/v1/connected_account_transfers`, which moves funds between the platform
+  and a connected account. Pass `headers: { "x-on-behalf-of" => ... }` to
+  debit a connected account instead of the platform
+- `Transfer.simulate_transition`, `Transfer#simulate_transition` and
+  `Transfer#cancel` accept `headers:`. A transfer created `x-on-behalf-of` a
+  connected account can only be found with that same header
+
+### Fixed
+
+- `FundsSplit` docs (README and class comment) now show the real create body:
+  `request_id`, `source_id`, `source_type: "PAYMENT_INTENT"`, `amount` (string),
+  `destination`, `auto_release`, `metadata`, with one split per destination.
+  The docs previously showed `payment_intent_id:` and `splits: [...]`
+- Documented that `funds_split.*` webhook payloads use `split_id` (not `id`)
+  and carry no `request_id`, and that the sandbox rejects a PROCESSING -> PAID
+  transfer transition (go through SENT)
+
 ## [0.10.0] - 2026-09-29
 
 ### Added

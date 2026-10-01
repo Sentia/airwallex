@@ -13,17 +13,20 @@ RSpec.describe Airwallex::FundsSplit do
   describe ".create" do
     let(:create_params) do
       {
-        payment_intent_id: "int_123",
-        splits: [{ account_id: "acct_123", amount: 50.00 }]
+        request_id: "req_123",
+        source_id: "int_123",
+        source_type: "PAYMENT_INTENT",
+        amount: "50.00",
+        destination: "acct_123"
       }
     end
 
     before do
       stub_request(:post, "#{BASE_URL}/api/v1/pa/funds_splits/create")
-        .with(body: hash_including(payment_intent_id: "int_123"))
+        .with(body: hash_including(source_id: "int_123", source_type: "PAYMENT_INTENT", destination: "acct_123"))
         .to_return(
           status: 200,
-          body: { id: "split_123", payment_intent_id: "int_123", status: "PENDING" }.to_json,
+          body: { id: "split_123", source_id: "int_123", destination: "acct_123", status: "PENDING" }.to_json,
           headers: { "Content-Type" => "application/json" }
         )
     end

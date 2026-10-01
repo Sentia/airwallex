@@ -375,7 +375,7 @@ payment_source = Airwallex::PaymentSource.create(
 )
 ```
 
-### Scale (Connected Accounts, Funds Splits, Charges)
+### Scale (Connected Accounts, Funds Splits, Reversals, Connected Account Transfers, Charges)
 
 For platforms onboarding sub-merchants:
 
@@ -407,16 +407,55 @@ connected_account.submit
 Airwallex::ConnectedAccount.current
 Airwallex::ConnectedAccount.wallet_info
 
-# Split a charge's funds between the platform and a connected account
+# Split part of a PaymentIntent's funds to a connected account. One split per
+# destination: create several splits to pay several connected accounts.
+# A reused request_id raises BadRequestError (duplicate_request); splitting
+# more than the PaymentIntent amount raises amount_above_limit.
 split = Airwallex::FundsSplit.create(
-  payment_intent_id: payment_intent.id,
-  splits: [{ account_id: connected_account.id, amount: 10.00 }]
+  request_id: 'split-order-123',  # required, max 64
+  source_id: payment_intent.id,   # required
+  source_type: 'PAYMENT_INTENT',  # required
+  amount: '10.00',                # required, string
+  destination: connected_account.id,
+  auto_release: false,            # optional, default true
+  metadata: { order_id: '123' }   # optional
 )
-split.release
+split.release # only needed when auto_release: false
+
+# Reverse split funds back to the platform. Partial reversals are allowed
+# until the full split is reversed. Statuses: CREATED, RELEASED, SETTLED
+reversal = Airwallex::FundsSplitReversal.create(
+  request_id: 'rev-order-123',    # required, max 64
+  funds_split_id: split.id,       # required
+  amount: '5.00',                 # required, string
+  metadata: { reason: 'refund' }  # optional
+)
+Airwallex::FundsSplitReversal.retrieve(reversal.id)
+Airwallex::FundsSplitReversal.list(funds_split_id: split.id) # funds_split_id is required
+
+# Move funds between the platform and a connected account's wallet. Pass
+# x-on-behalf-of to debit a connected account instead of the platform.
+# Statuses: NEW, PENDING, SETTLED, SUSPENDED, FAILED
+cat = Airwallex::ConnectedAccountTransfer.create(
+  request_id: 'top-up-123',       # required, 1-50
+  amount: '100.00',
+  currency: 'AUD',
+  destination: connected_account.id,
+  reason: 'transfer_to_own_account',
+  reference: 'Ledger top-up'      # required, 1-140
+)
+Airwallex::ConnectedAccountTransfer.retrieve(cat.id)
+Airwallex::ConnectedAccountTransfer.list(destination: connected_account.id, status: 'SETTLED')
+
+# Pay out from a connected account: create the Transfer on its behalf
+Airwallex::Transfer.create(transfer_params, headers: { 'x-on-behalf-of' => connected_account.id })
 
 # Charges (create, retrieve, list)
 charge = Airwallex::Charge.retrieve('charge_id')
 ```
+
+`funds_split.*` webhook payloads name the split `split_id`, not `id`, and carry
+no `request_id`: `{ split_id, status, amount, currency, source_id, source_type, destination, ... }`.
 
 ### Requests for Information (RFIs)
 
@@ -555,7 +594,17 @@ transfer.simulate_transition(next_status: 'FAILED', failure_type: 'INSUFFICIENT_
 
 # Class-level equivalent takes a transfer_id directly instead of an instance
 Airwallex::Transfer.simulate_transition('tfr_123', next_status: 'CANCELLED')
+
+# A transfer created x-on-behalf-of a connected account can only be found
+# with the same header (cancel takes it too)
+headers = { 'x-on-behalf-of' => 'acct_123' }
+transfer.simulate_transition(next_status: 'SENT', headers: headers)
+Airwallex::Transfer.simulate_transition('tfr_123', next_status: 'PAID', headers: headers)
+transfer.cancel(headers: headers)
 ```
+
+The sandbox rejects PROCESSING -> PAID with a 500 `operation_failed`. Move the
+transfer to SENT first.
 
 #### Connected Accounts & Offboarding
 
@@ -746,6 +795,10 @@ begin
     handle_successful_payment(event.data)
   when 'payout.transfer.failed'
     handle_failed_payout(event.data)
+  when 'funds_split.settled'
+    # funds_split.* payloads identify the split by split_id (not id) and
+    # carry no request_id — see the Scale section
+    handle_settled_split(event.data)
   end
 rescue Airwallex::SignatureVerificationError => e
   # Invalid signature
@@ -849,7 +902,7 @@ end
   - Customer (create, retrieve, list, update, delete)
   - Dispute (retrieve, list, accept, challenge, related_payment_intents, simulate_create, simulate_escalate, simulate_resolve)
 - **Payouts**:
-  - Transfer (create, retrieve, list, cancel, simulate_transition)
+  - Transfer (create, retrieve, list, cancel, simulate_transition; cancel/simulate_transition take headers: for x-on-behalf-of)
   - Beneficiary (create, retrieve, list, update, delete, validate, verify_account, api_schema, form_schema, supported_financial_institutions)
   - BatchTransfer (create, retrieve, list)
 - **Foreign Exchange & Multi-Currency**:
@@ -876,6 +929,8 @@ end
   - AccountAmendment (create, retrieve, simulate_approve, simulate_reject) - requires Admin-level API key permissions
   - AccountOffboarding — sandbox Simulation only, scoped to a parent ConnectedAccount (simulate_complete, simulate_cancel)
   - FundsSplit (create, retrieve, list, release)
+  - FundsSplitReversal (create, retrieve, list)
+  - ConnectedAccountTransfer (create, retrieve, list)
   - Charge (create, retrieve, list)
 - **Issuing** (sandbox Simulation only — no live Card/Cardholder resources yet):
   - IssuingTransaction (simulate_create with single_phase, simulate_capture, simulate_reverse, simulate_refund, simulate_notify_three_ds)
