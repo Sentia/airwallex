@@ -4,9 +4,14 @@ require "faraday"
 require "faraday/multipart"
 require "faraday/retry"
 require "json"
+require_relative "client/file_uploads"
+require_relative "client/logging"
 
 module Airwallex
   class Client
+    include FileUploads
+    include Logging
+
     LOGIN_PATH = "/api/v1/authentication/login"
 
     attr_reader :config, :access_token, :token_expires_at
@@ -105,7 +110,7 @@ module Airwallex
       conn.request :retry, retry_options
       conn.use Airwallex::Middleware::AuthRefresh, self
       conn.response :json, content_type: /\bjson$/
-      conn.response :logger, config.logger, { headers: true, bodies: true } if config.logger
+      configure_logger(conn, bodies: true)
     end
 
     def handle_response_errors(response)

@@ -1,5 +1,33 @@
 ## [Unreleased]
 
+## [0.12.0] - 2026-10-06
+
+### Added
+
+- `RFI.respond(rfi_id, params, opts)` and `RFI#respond(params, opts)` for
+  `POST /api/v1/rfis/{id}/respond`. Params are sent as-is
+  (`questions: [{ id:, answer: { type:, ... } }]`) and take `headers:` for
+  `x-on-behalf-of`. No `request_id` is added to this body, because the
+  endpoint doesn't document one
+- `UploadedFile.upload(io, filename:, content_type:, notes: nil, opts: {})` for
+  `POST /api/v1/files/upload` on the files host (`config.files_url`). It sends
+  multipart/form-data with `file` and optional `notes` form fields, and
+  returns an `UploadedFile` with `#file_id` (`#id` mirrors it)
+- `Client#files_connection` and `Client#upload`: a separate connection to the
+  files host with no JSON Content-Type default, no JSON encoding, no
+  Idempotency middleware, and no logging of request bodies
+
+### Fixed
+
+- `AuthRefresh` now re-sends the original request body when it retries after
+  a 401. It previously re-sent the parsed 401 response body, so any POST that
+  hit an expired token was retried with the wrong body. Multipart stream
+  bodies are rewound before the retry
+- With `config.logger` set, the logger no longer writes credentials: the
+  `x-api-key` header, the `Authorization` bearer token, and the `token` in the
+  login response are logged as `[FILTERED]`. They were previously logged in
+  plain text
+
 ## [0.11.0] - 2026-10-01
 
 ### Added

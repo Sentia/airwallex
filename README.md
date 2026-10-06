@@ -16,7 +16,7 @@ This gem provides a Ruby interface to Airwallex's payment infrastructure, design
 - **Billing**: Products, prices, billing customers, and subscriptions for recurring/instalment billing
 - **Recurring Payments**: Payment consents and payment sources for merchant-initiated (off-session) charges
 - **Scale**: Connected accounts, funds splits, and charges for platforms onboarding sub-merchants
-- **Compliance**: Retrieve and list Requests for Information (RFIs), including for connected accounts
+- **Compliance**: Retrieve, list and respond to Requests for Information (RFIs), and upload supporting documents, including for connected accounts
 - **Sandbox Simulations**: Deposits, issuing transactions, disputes, transfer status, Direct Debit mandates, connected account/offboarding review outcomes, RFIs, and POS terminals — see [Sandbox Simulations](#sandbox-simulations)
 - **Idempotency**: Automatic request deduplication for safe retries
 - **Pagination**: Unified interface over cursor-based and offset-based pagination
@@ -476,6 +476,50 @@ rfi.active_request[:questions].first # => { id: ..., title: { en: ... }, answer:
 Airwallex::RFI.list({ statuses: 'ACTION_REQUIRED', types: 'KYC,KYC_ONGOING' }, headers: headers)
               .auto_paging_each { |r| puts r.id }
 ```
+
+#### Responding to an RFI
+
+Upload any documents first, then answer every question in `active_request`
+in one call. Files go to the separate files host (`files-demo.airwallex.com`
+in sandbox, `files.airwallex.com` in production), up to 20MB each, and the
+returned `file_id` is what the answer references.
+
+```ruby
+passport = Airwallex::UploadedFile.upload(
+  File.open('passport.jpg', 'rb'),
+  filename: 'passport.jpg',
+  content_type: 'image/jpeg',
+  notes: 'passport-front',
+  opts: { headers: headers }
+)
+
+rfi = Airwallex::RFI.retrieve('rfi_123', headers: headers)
+rfi.respond(
+  {
+    questions: [
+      { id: 'q1', answer: { type: 'TEXT', text: 'We only operate in Australia' } },
+      { id: 'q2', answer: { type: 'ATTACHMENT', attachments: [{ file_id: passport.file_id }] } },
+      { id: 'q3', answer: { type: 'CONFIRMATION', confirmed: true } }
+    ]
+  },
+  headers: headers
+)
+rfi.status # => "ANSWERED"
+```
+
+Answer types are `TEXT` (`text:`), `ATTACHMENT` (`attachments: [{ file_id: }]`),
+`CONFIRMATION` (`confirmed:`), `ADDRESS` (`address: { address_line1:, ... }`),
+`IDENTITY_DOCUMENT` (`identity_document: { type:, number:, issuing_country:,
+front_file_id:, back_file_id: }`) and `LIVENESS`. A `LIVENESS` question is
+completed at its `liveness[:url]` rather than answered here, so do that first.
+The status then goes `ACTION_REQUIRED` → `ANSWERED` → `CLOSED`.
+
+Errors: `BadRequestError` with code `invalid_state_for_operation` (the RFI
+isn't `ACTION_REQUIRED`) or `invalid_argument` (a question is unanswered or
+has the wrong answer shape), and `PermissionError` with
+`account_not_authorised_for_operation`. You also get that last one when
+answering RFIs for connected accounts through the API hasn't been enabled
+for your platform; ask your Airwallex Account Manager to turn it on.
 
 ### Sandbox Simulations
 
@@ -938,7 +982,8 @@ end
 - **In-Person Payments** (sandbox Simulation only):
   - POSTerminal (simulate_turn_on, simulate_turn_off, simulate_generate_activation_code, simulate_confirm_payment_intent, simulate_payment_scenarios)
 - **Compliance**:
-  - RFI (retrieve, list, plus sandbox simulate_create, simulate_close, simulate_follow_up)
+  - RFI (retrieve, list, respond, plus sandbox simulate_create, simulate_close, simulate_follow_up)
+  - UploadedFile (upload, to the files host)
 - **Webhooks**: Event handling, HMAC-SHA256 signature verification
 
 ### Coming in Future Versions

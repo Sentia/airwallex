@@ -56,6 +56,7 @@ require_relative "airwallex/resources/cardholder"
 require_relative "airwallex/resources/linked_account"
 require_relative "airwallex/resources/account_offboarding"
 require_relative "airwallex/resources/rfi"
+require_relative "airwallex/resources/uploaded_file"
 require_relative "airwallex/resources/pos_terminal"
 
 module Airwallex
