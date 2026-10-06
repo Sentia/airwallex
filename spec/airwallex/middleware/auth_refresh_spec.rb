@@ -135,4 +135,20 @@ RSpec.describe Airwallex::Middleware::AuthRefresh do
       end
     end
   end
+
+  describe "re-sending the request body after a 401" do
+    it "retries a JSON POST with the original body, not the 401 response body" do
+      bodies = []
+      stub_request(:post, "#{BASE_URL}/api/v1/test_resources/create")
+        .with { |req| bodies << JSON.parse(req.body) }
+        .to_return({ status: 401, body: { code: "unauthorized" }.to_json,
+                     headers: { "Content-Type" => "application/json" } },
+                   { status: 200, body: { id: "res_1" }.to_json,
+                     headers: { "Content-Type" => "application/json" } })
+
+      Airwallex.client.post("/api/v1/test_resources/create", { name: "x", request_id: "req_1" })
+
+      expect(bodies).to eq([{ "name" => "x", "request_id" => "req_1" }] * 2)
+    end
+  end
 end

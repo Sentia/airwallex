@@ -114,6 +114,64 @@ RSpec.describe Airwallex::RFI do
     end
   end
 
+  describe ".respond" do
+    let(:answers) do
+      {
+        questions: [
+          { id: "q1", answer: { type: "TEXT", text: "We operate in AU only" } },
+          { id: "q2", answer: { type: "ATTACHMENT", attachments: [{ file_id: "file_123" }] } }
+        ]
+      }
+    end
+
+    it "posts the answers as-is with x-on-behalf-of and returns the RFI" do
+      stub = stub_request(:post, "#{BASE_URL}/api/v1/rfis/#{rfi_id}/respond")
+             .with(body: answers.to_json, headers: on_behalf_of.merge("Content-Type" => "application/json"))
+             .to_return(json_response(rfi_data.merge(status: "ANSWERED")))
+
+      rfi = described_class.respond(rfi_id, answers, headers: on_behalf_of)
+
+      expect(stub).to have_been_requested
+      expect(rfi).to be_a(described_class)
+      expect(rfi.status).to eq("ANSWERED")
+    end
+
+    it "does not add a request_id to the body" do
+      stub = stub_request(:post, "#{BASE_URL}/api/v1/rfis/#{rfi_id}/respond")
+             .with { |req| !JSON.parse(req.body).key?("request_id") }
+             .to_return(json_response(rfi_data))
+
+      described_class.respond(rfi_id, answers)
+
+      expect(stub).to have_been_requested
+    end
+
+    it "raises BadRequestError when the RFI is not ACTION_REQUIRED" do
+      stub_request(:post, "#{BASE_URL}/api/v1/rfis/#{rfi_id}/respond")
+        .to_return(json_response({ code: "invalid_state_for_operation", message: "invalid status" }, status: 400))
+
+      expect { described_class.respond(rfi_id, answers, headers: on_behalf_of) }
+        .to raise_error(Airwallex::BadRequestError, /invalid status/) { |e| expect(e.code).to eq("invalid_state_for_operation") }
+    end
+  end
+
+  describe "#respond" do
+    it "responds to this RFI and refreshes its state" do
+      rfi = described_class.new(rfi_data)
+      stub = stub_request(:post, "#{BASE_URL}/api/v1/rfis/#{rfi_id}/respond")
+             .with(body: { questions: [{ id: "q1", answer: { type: "TEXT", text: "x" } }] }.to_json,
+                   headers: on_behalf_of)
+             .to_return(json_response(rfi_data.merge(status: "ANSWERED")))
+
+      result = rfi.respond({ questions: [{ id: "q1", answer: { type: "TEXT", text: "x" } }] }, headers: on_behalf_of)
+
+      expect(stub).to have_been_requested
+      expect(result).to equal(rfi)
+      expect(rfi.status).to eq("ANSWERED")
+      expect(rfi.active_request[:questions].first[:title][:en]).to eq("Nominated SMO Declaration")
+    end
+  end
+
   describe ".simulate_create" do
     it "raises an RFI" do
       stub_request(:post, "#{BASE_URL}/api/v1/simulation/rfis/create")

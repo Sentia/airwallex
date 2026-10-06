@@ -119,6 +119,65 @@ RSpec.describe Airwallex::Client do
     end
   end
 
+  describe "logging" do
+    let(:log) { StringIO.new }
+    let(:config) do
+      Airwallex::Configuration.new.tap do |c|
+        c.api_key = "secret_api_key_123"
+        c.client_id = "test_client_id"
+        c.environment = :sandbox
+        c.logger = Logger.new(log)
+      end
+    end
+
+    before do
+      stub_login(token: "secret_bearer_token")
+      stub_request(:get, "#{BASE_URL}/api/v1/rfis").to_return(
+        status: 200, body: { items: [] }.to_json, headers: { "Content-Type" => "application/json" }
+      )
+      stub_request(:post, "#{Airwallex::Configuration::SANDBOX_FILES_URL}/api/v1/files/upload").to_return(
+        status: 201, body: { file_id: "file_1" }.to_json, headers: { "Content-Type" => "application/json" }
+      )
+    end
+
+    it "masks the API key, bearer token and login token on both connections" do
+      client.get("/api/v1/rfis")
+      client.upload("/api/v1/files/upload",
+                    Faraday::Multipart::FilePart.new(StringIO.new("file bytes"), "text/plain", "a.txt"))
+
+      output = log.string
+      expect(output).to include("/api/v1/authentication/login", "/api/v1/rfis", "/api/v1/files/upload")
+      expect(output).not_to include("secret_api_key_123", "secret_bearer_token")
+      expect(output).to include('x-api-key: "[FILTERED]"', 'Authorization: "Bearer [FILTERED]"',
+                                '"token":"[FILTERED]"')
+    end
+
+    it "never logs upload bodies" do
+      client.upload("/api/v1/files/upload",
+                    Faraday::Multipart::FilePart.new(StringIO.new("very private file bytes"), "text/plain", "a.txt"))
+
+      expect(log.string).not_to include("very private file bytes")
+    end
+  end
+
+  describe "#files_connection" do
+    it "points at the files host" do
+      expect(client.files_connection.url_prefix.to_s).to eq("#{Airwallex::Configuration::SANDBOX_FILES_URL}/")
+    end
+
+    it "does not default Content-Type to JSON" do
+      expect(client.files_connection.headers["Content-Type"]).to be_nil
+      expect(client.files_connection.headers["User-Agent"]).to match(/Airwallex-Ruby/)
+    end
+
+    it "has no JSON request encoding or Idempotency middleware" do
+      handlers = client.files_connection.builder.handlers
+
+      expect(handlers).not_to include(Airwallex::Middleware::Idempotency, Faraday::Request::Json)
+      expect(handlers).to include(Faraday::Multipart::Middleware, Airwallex::Middleware::AuthRefresh)
+    end
+  end
+
   describe "#connection" do
     it "creates Faraday connection" do
       expect(client.connection).to be_a(Faraday::Connection)

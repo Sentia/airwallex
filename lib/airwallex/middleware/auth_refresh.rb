@@ -16,12 +16,19 @@ module Airwallex
         @client.ensure_authenticated! unless authentication_request?(env)
         authorize!(env)
 
+        # Once a response arrives, env[:body] holds the response body, so
+        # keep the request body to re-send it (same as faraday-retry)
+        request_body = env[:body]
         response = @app.call(env)
 
         # If we get a 401, try refreshing the token and retrying once
         if response.status == 401
           @client.authenticate!
           authorize!(env)
+          env[:body] = request_body
+          # A multipart upload body is a stream the first attempt already
+          # read; rewind it so the retry sends the file again
+          request_body.rewind if request_body.respond_to?(:rewind)
           response = @app.call(env)
         end
 
