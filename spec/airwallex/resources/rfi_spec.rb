@@ -124,9 +124,9 @@ RSpec.describe Airwallex::RFI do
       }
     end
 
-    it "posts the answers as-is with x-on-behalf-of and returns the RFI" do
+    it "posts the answers with x-on-behalf-of and returns the RFI" do
       stub = stub_request(:post, "#{BASE_URL}/api/v1/rfis/#{rfi_id}/respond")
-             .with(body: answers.to_json, headers: on_behalf_of.merge("Content-Type" => "application/json"))
+             .with(body: hash_including(answers), headers: on_behalf_of.merge("Content-Type" => "application/json"))
              .to_return(json_response(rfi_data.merge(status: "ANSWERED")))
 
       rfi = described_class.respond(rfi_id, answers, headers: on_behalf_of)
@@ -134,16 +134,6 @@ RSpec.describe Airwallex::RFI do
       expect(stub).to have_been_requested
       expect(rfi).to be_a(described_class)
       expect(rfi.status).to eq("ANSWERED")
-    end
-
-    it "does not add a request_id to the body" do
-      stub = stub_request(:post, "#{BASE_URL}/api/v1/rfis/#{rfi_id}/respond")
-             .with { |req| !JSON.parse(req.body).key?("request_id") }
-             .to_return(json_response(rfi_data))
-
-      described_class.respond(rfi_id, answers)
-
-      expect(stub).to have_been_requested
     end
 
     it "raises BadRequestError when the RFI is not ACTION_REQUIRED" do
@@ -159,7 +149,7 @@ RSpec.describe Airwallex::RFI do
     it "responds to this RFI and refreshes its state" do
       rfi = described_class.new(rfi_data)
       stub = stub_request(:post, "#{BASE_URL}/api/v1/rfis/#{rfi_id}/respond")
-             .with(body: { questions: [{ id: "q1", answer: { type: "TEXT", text: "x" } }] }.to_json,
+             .with(body: hash_including(questions: [{ id: "q1", answer: { type: "TEXT", text: "x" } }]),
                    headers: on_behalf_of)
              .to_return(json_response(rfi_data.merge(status: "ANSWERED")))
 

@@ -16,6 +16,7 @@ This gem provides a Ruby interface to Airwallex's payment infrastructure, design
 - **Billing**: Products, prices, billing customers, and subscriptions for recurring/instalment billing
 - **Recurring Payments**: Payment consents and payment sources for merchant-initiated (off-session) charges
 - **Scale**: Connected accounts, funds splits, and charges for platforms onboarding sub-merchants
+- **Embedded Components**: Authorization codes for Airwallex's embedded UI components, including for connected accounts
 - **Compliance**: Retrieve, list and respond to Requests for Information (RFIs), and upload supporting documents, including for connected accounts
 - **Sandbox Simulations**: Deposits, issuing transactions, disputes, transfer status, Direct Debit mandates, connected account/offboarding review outcomes, RFIs, and POS terminals — see [Sandbox Simulations](#sandbox-simulations)
 - **Idempotency**: Automatic request deduplication for safe retries
@@ -520,6 +521,32 @@ has the wrong answer shape), and `PermissionError` with
 `account_not_authorised_for_operation`. You also get that last one when
 answering RFIs for connected accounts through the API hasn't been enabled
 for your platform; ask your Airwallex Account Manager to turn it on.
+
+### Embedded Components
+
+Airwallex's embedded UI components (beneficiary, payout, onboarding, KYB, RFI,
+SCA and tax forms) need an authorization code from your backend.
+`EmbeddedComponent.authorize` mints one using a PKCE S256 challenge. Pass
+`x-on-behalf-of` to issue it for a connected account; without it the code is
+for the platform account. The code is single use and expires in 30 seconds,
+so give it and the `code_verifier` to the browser SDK straight away.
+
+```ruby
+code_verifier = SecureRandom.urlsafe_base64(64)
+code_challenge = Base64.urlsafe_encode64(Digest::SHA256.digest(code_verifier), padding: false)
+
+Airwallex::EmbeddedComponent.authorize(
+  code_challenge: code_challenge,
+  scope: ['transfer:write'], # beneficiary and payout components
+  headers: { 'x-on-behalf-of' => 'acct_123' }
+)
+# => { authorization_code: "..." }
+```
+
+The other scopes are `onboarding:write`, `kyb:write`, `rfi:read`, `rfi:write`,
+`sca:read`, `sca:write`, `tax_form:read` and `tax_form:write`. `identity:` is
+only used by embedded SCA. A bad `code_challenge` or `scope` raises
+`BadRequestError` (`field_required`, `invalid_argument` or `validation_failed`).
 
 ### Sandbox Simulations
 
