@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+## [0.13.0] - 2026-10-21
+
 ### Added
 
 - `EmbeddedComponent.authorize(code_challenge:, scope:, identity: nil, headers: {})`
