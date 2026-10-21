@@ -30,10 +30,12 @@ module Airwallex
     # never becomes a resource).
     #
     # @param path [String] the request path
-    # @param params [Hash] request body
+    # @param params [Hash, String] request body (a pre-encoded JSON String
+    #   skips the Idempotency middleware's request_id)
+    # @param headers [Hash] e.g. { "x-on-behalf-of" => account_id }
     # @return [Hash] symbolized response
-    def self.symbolized_post(path, params = {})
-      Util.deep_symbolize_keys(Airwallex.client.post(path, params))
+    def self.symbolized_post(path, params = {}, headers = {})
+      Util.deep_symbolize_keys(Airwallex.client.post(path, params, headers))
     end
 
     # Perform a one-off GET that returns a plain, symbolized Hash rather

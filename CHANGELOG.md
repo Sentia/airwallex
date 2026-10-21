@@ -1,5 +1,15 @@
 ## [Unreleased]
 
+### Added
+
+- `EmbeddedComponent.authorize(code_challenge:, scope:, identity: nil, headers: {})`
+  for `POST /api/v1/authentication/authorize`. It returns a symbolized Hash,
+  `{ authorization_code: }`, for the embedded component SDK. The code is
+  single use and expires in 30 seconds. Pass `headers:` with `x-on-behalf-of`
+  to issue it for a connected account. No `request_id` is added to this body,
+  because the endpoint doesn't document one
+- `APIResource.symbolized_post` takes an optional `headers` argument
+
 ## [0.12.0] - 2026-10-06
 
 ### Added
