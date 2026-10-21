@@ -30,8 +30,7 @@ module Airwallex
     # never becomes a resource).
     #
     # @param path [String] the request path
-    # @param params [Hash, String] request body (a pre-encoded JSON String
-    #   skips the Idempotency middleware's request_id)
+    # @param params [Hash] request body
     # @param headers [Hash] e.g. { "x-on-behalf-of" => account_id }
     # @return [Hash] symbolized response
     def self.symbolized_post(path, params = {}, headers = {})

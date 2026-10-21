@@ -14,7 +14,7 @@ RSpec.describe Airwallex::EmbeddedComponent do
   describe ".authorize" do
     it "posts the code challenge and scope with x-on-behalf-of and returns a symbolized Hash" do
       stub = stub_request(:post, authorize_url)
-             .with(body: { code_challenge: code_challenge, scope: ["transfer:write"] }.to_json,
+             .with(body: hash_including(code_challenge: code_challenge, scope: ["transfer:write"]),
                    headers: on_behalf_of.merge("Content-Type" => "application/json"))
              .to_return(json_response({ authorization_code: "ac_123" }))
 
@@ -27,7 +27,7 @@ RSpec.describe Airwallex::EmbeddedComponent do
 
     it "sends identity when given" do
       stub = stub_request(:post, authorize_url)
-             .with(body: { code_challenge: code_challenge, scope: ["sca:write"], identity: "user_123" }.to_json)
+             .with(body: hash_including(code_challenge: code_challenge, scope: ["sca:write"], identity: "user_123"))
              .to_return(json_response({ authorization_code: "ac_123" }))
 
       described_class.authorize(code_challenge: code_challenge, scope: ["sca:write"], identity: "user_123")
@@ -35,9 +35,9 @@ RSpec.describe Airwallex::EmbeddedComponent do
       expect(stub).to have_been_requested
     end
 
-    it "does not add a request_id or x-on-behalf-of by default" do
+    it "does not send x-on-behalf-of by default" do
       stub = stub_request(:post, authorize_url)
-             .with { |req| !JSON.parse(req.body).key?("request_id") && !req.headers.key?("X-On-Behalf-Of") }
+             .with { |req| !req.headers.key?("X-On-Behalf-Of") }
              .to_return(json_response({ authorization_code: "ac_123" }))
 
       described_class.authorize(code_challenge: code_challenge, scope: ["transfer:write"])

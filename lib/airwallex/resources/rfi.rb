@@ -110,30 +110,16 @@ module Airwallex
       )
     end
 
-    # Respond to an RFI. params are sent as-is (see the class docs for the
-    # body shape). Unlike other POSTs, no request_id is added: the endpoint
-    # doesn't document one.
+    # Respond to an RFI. See the class docs for the body shape.
     #
     # @param rfi_id [String]
     # @param params [Hash] questions: (required) array of { id:, answer: { type:, ... } }
     # @param opts [Hash] headers: (e.g. { "x-on-behalf-of" => account_id })
     # @return [RFI]
     def self.respond(rfi_id, params = {}, opts = {})
-      response = Airwallex.client.post("#{resource_path}/#{rfi_id}/respond", without_request_id(params),
-                                       opts[:headers] || {})
+      response = Airwallex.client.post("#{resource_path}/#{rfi_id}/respond", params, opts[:headers] || {})
       new(response)
     end
-
-    # Pre-encode the body as JSON: the Idempotency middleware only adds
-    # request_id to Hash bodies, and the JSON middleware passes strings on
-    # unchanged
-    #
-    # @param params [Hash]
-    # @return [String]
-    def self.without_request_id(params)
-      JSON.generate(params)
-    end
-    private_class_method :without_request_id
 
     # Simulate Airwallex raising an RFI
     #

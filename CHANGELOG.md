@@ -8,9 +8,15 @@
   for `POST /api/v1/authentication/authorize`. It returns a symbolized Hash,
   `{ authorization_code: }`, for the embedded component SDK. The code is
   single use and expires in 30 seconds. Pass `headers:` with `x-on-behalf-of`
-  to issue it for a connected account. No `request_id` is added to this body,
-  because the endpoint doesn't document one
+  to issue it for a connected account
 - `APIResource.symbolized_post` takes an optional `headers` argument
+
+### Changed
+
+- `RFI.respond` and `RFI#respond` now send a normal JSON body, so the
+  Idempotency middleware adds a `request_id` like it does for other POSTs.
+  0.12.0 left it out because the endpoint doesn't document one, but a sandbox
+  test confirmed Airwallex accepts it
 
 ## [0.12.0] - 2026-10-06
 

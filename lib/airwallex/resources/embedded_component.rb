@@ -26,8 +26,7 @@ module Airwallex
 
     # Issue a single-use authorization code for an embedded component. The
     # code expires in 30 seconds; hand it, with the code_verifier, to the
-    # browser SDK straight away. Unlike other POSTs, no request_id is added:
-    # the endpoint doesn't document one.
+    # browser SDK straight away.
     #
     # @param code_challenge [String] BASE64URL(SHA256(code_verifier)), the
     #   PKCE S256 challenge (RFC 7636 section 4)
@@ -39,9 +38,7 @@ module Airwallex
     def self.authorize(code_challenge:, scope:, identity: nil, headers: {})
       params = { code_challenge: code_challenge, scope: scope }
       params[:identity] = identity if identity
-
-      # Pre-encoded so the Idempotency middleware (Hash bodies only) skips it
-      symbolized_post(AUTHORIZE_PATH, JSON.generate(params), headers)
+      symbolized_post(AUTHORIZE_PATH, params, headers)
     end
   end
 end

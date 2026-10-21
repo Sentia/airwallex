@@ -545,8 +545,7 @@ Airwallex::EmbeddedComponent.authorize(
 
 The other scopes are `onboarding:write`, `kyb:write`, `rfi:read`, `rfi:write`,
 `sca:read`, `sca:write`, `tax_form:read` and `tax_form:write`. `identity:` is
-only used by embedded SCA. No `request_id` is sent, because the endpoint
-doesn't document one. A bad `code_challenge` or `scope` raises
+only used by embedded SCA. A bad `code_challenge` or `scope` raises
 `BadRequestError` (`field_required`, `invalid_argument` or `validation_failed`).
 
 ### Sandbox Simulations
